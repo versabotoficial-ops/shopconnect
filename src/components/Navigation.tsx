@@ -133,7 +133,10 @@ export function Navigation({ currentView, setView, onLogout, userProfile, unread
               )}
             </div>
             
-            <button className="ml-2 hidden lg:flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-full shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 transition-colors">
+            <button 
+              onClick={() => setView('dashboard')}
+              className="ml-2 hidden lg:flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-full shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 transition-colors"
+            >
               Anunciar agora
             </button>
           </div>
