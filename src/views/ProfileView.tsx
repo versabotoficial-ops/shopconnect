@@ -17,6 +17,8 @@ export function ProfileView({
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState(userProfile);
   const [showMyAds, setShowMyAds] = useState(false);
+  const [showReviews, setShowReviews] = useState(false);
+  const [showOrders, setShowOrders] = useState(false);
   const [editingAd, setEditingAd] = useState<any>(null);
 
   const avatarInputRef = useRef<HTMLInputElement>(null);
@@ -236,25 +238,35 @@ export function ProfileView({
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
         <h2 className="text-lg font-bold text-slate-900 mb-4">Estatísticas do Perfil</h2>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="p-4 border border-slate-100 rounded-lg bg-slate-50 flex items-center justify-between">
+          {/* Card Avaliações — clicável */}
+          <button
+            onClick={() => { setShowReviews(!showReviews); setShowOrders(false); setShowMyAds(false); }}
+            className="p-4 border border-slate-100 rounded-lg bg-slate-50 flex items-center justify-between hover:bg-amber-50 hover:border-amber-200 transition-colors text-left w-full"
+          >
             <div>
               <p className="text-slate-500 text-sm font-medium mb-1">Avaliações</p>
               <p className="text-2xl font-bold text-slate-900">{rating > 0 ? rating.toFixed(1) : '0'}</p>
+              <p className="text-xs text-amber-600 font-medium mt-1">{showReviews ? 'Fechar ▲' : 'Ver avaliações ▼'}</p>
             </div>
             <div className="w-12 h-12 bg-amber-100 text-amber-500 rounded-full flex items-center justify-center text-2xl">★</div>
-          </div>
+          </button>
 
-          <div className="p-4 border border-slate-100 rounded-lg bg-slate-50 flex items-center justify-between">
+          {/* Card Compras — clicável */}
+          <button
+            onClick={() => { setShowOrders(!showOrders); setShowReviews(false); setShowMyAds(false); }}
+            className="p-4 border border-slate-100 rounded-lg bg-slate-50 flex items-center justify-between hover:bg-indigo-50 hover:border-indigo-200 transition-colors text-left w-full"
+          >
             <div>
               <p className="text-slate-500 text-sm font-medium mb-1">Compras</p>
               <p className="text-2xl font-bold text-slate-900">{purchasesCount}</p>
+              <p className="text-xs text-indigo-600 font-medium mt-1">{showOrders ? 'Fechar ▲' : 'Ver compras ▼'}</p>
             </div>
             <div className="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center text-xl font-bold">🛍️</div>
-          </div>
+          </button>
 
           {/* Card de Anúncios ativos — clicável */}
           <button
-            onClick={() => setShowMyAds(!showMyAds)}
+            onClick={() => { setShowMyAds(!showMyAds); setShowReviews(false); setShowOrders(false); }}
             className="p-4 border border-slate-100 rounded-lg bg-slate-50 flex items-center justify-between hover:bg-emerald-50 hover:border-emerald-200 transition-colors text-left w-full"
           >
             <div>
@@ -266,6 +278,34 @@ export function ProfileView({
           </button>
         </div>
       </div>
+
+      {/* Painel de Avaliações */}
+      {showReviews && (
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-4">
+          <h2 className="text-lg font-bold text-slate-900">Avaliações Recebidas</h2>
+          <div className="flex flex-col items-center justify-center py-10 text-slate-400 space-y-3">
+            <div className="text-5xl">⭐</div>
+            <p className="text-base font-medium text-slate-600">Nenhuma avaliação ainda</p>
+            <p className="text-sm text-slate-400 text-center max-w-xs">
+              Quando alguém comprar ou vender com você, as avaliações aparecerão aqui automaticamente.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Painel de Compras */}
+      {showOrders && (
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-4">
+          <h2 className="text-lg font-bold text-slate-900">Histórico de Compras</h2>
+          <div className="flex flex-col items-center justify-center py-10 text-slate-400 space-y-3">
+            <div className="text-5xl">🛍️</div>
+            <p className="text-base font-medium text-slate-600">Nenhuma compra realizada ainda</p>
+            <p className="text-sm text-slate-400 text-center max-w-xs">
+              Quando você finalizar uma compra na plataforma, o histórico completo aparecerá aqui.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Painel de anúncios */}
       {showMyAds && (
