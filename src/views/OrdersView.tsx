@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Package, Truck, CheckCircle2, Clock } from 'lucide-react';
 
 export function OrdersView() {
   const [orders, setOrders] = useState<any[]>([]);
