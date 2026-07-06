@@ -37,10 +37,16 @@ export default function App() {
     return ['Tudo', 'Computadores', 'Video Games', 'Jogos', 'Acessórios'];
   });
 
-  const [products, setProducts] = useState(MOCK_PRODUCTS);
+  const [products, setProducts] = useState(() => {
+    const saved = localStorage.getItem('global_products');
+    if (saved) return JSON.parse(saved);
+    return MOCK_PRODUCTS;
+  });
 
   const handleAddProduct = (newProduct: any) => {
-    setProducts([newProduct, ...products]);
+    const updated = [newProduct, ...products];
+    setProducts(updated);
+    localStorage.setItem('global_products', JSON.stringify(updated));
     handleSetView('home');
   };
 
