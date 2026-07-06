@@ -236,14 +236,27 @@ function CreateAdModal({
       const condition = formData.condition;
       const price = formData.price;
       
-      const templates = [
-        `🔥 **${title}** — Oportunidade imperdível para quem busca qualidade e bom preço!\n⭐ Produto em estado ${condition.toLowerCase()}, funcionando perfeitamente e pronto para uso imediato.\n📦 Envio rápido e seguro para todo o Brasil. Embalagem reforçada com total cuidado.\n💰 Aproveite ${price ? 'por apenas R$ ' + price + '!' : 'essa oferta exclusiva!'} Não perca essa chance! 🚀`,
-        `✨ **${title}** disponível agora no ShopConnect!\n🏷️ Condição: ${condition} | Produto verificado e com garantia de satisfação total.\n🎯 Ideal para quem procura o melhor custo-benefício. Qualidade premium garantida!\n📲 Compre agora e receba em casa com toda segurança. ${price ? 'Valor: R$ ' + price : 'Preço imbatível!'} 🛒`,
-        `🌟 Chegou o que você estava esperando: **${title}**!\n💎 Estado: ${condition} — Produto de alta qualidade, testado e aprovado.\n🚚 Frete para todo o Brasil! Entrega rápida e rastreável.\n🔒 Compra 100% segura pelo ShopConnect. ${price ? 'Apenas R$ ' + price + ' — ' : ''}Garanta o seu! 💥`,
-      ];
+      const titleParts = title.split(' ');
+      const possibleBrand = titleParts.length > 1 ? titleParts[0] : 'Não especificada';
+      const possibleModel = titleParts.length > 1 ? titleParts.slice(1).join(' ') : title;
       
-      const randomIndex = Math.floor(Math.random() * templates.length);
-      setFormData(prev => ({ ...prev, description: templates[randomIndex] }));
+      const factualDescription = `📋 FICHA TÉCNICA
+• Produto: ${title}
+• Marca provável: ${possibleBrand}
+• Modelo: ${possibleModel}
+• Condição: ${condition}
+• Categoria: ${formData.category}
+
+📌 SOBRE ESTE ITEM
+Este é um anúncio verificado da categoria ${formData.category}. As características físicas, cor e estado de conservação exatos são os mesmos apresentados nas fotos originais anexadas a este anúncio.
+
+- Preço de venda: ${price ? 'R$ ' + price : 'Não especificado'}
+- Local de retirada/envio: ${formData.location || 'Conforme o perfil do vendedor'}
+- Observação: Nenhuma modificação ou adjetivo fictício foi adicionado. O produto é vendido conforme os dados acima e as imagens anexadas.
+
+⚠️ Adicione acima detalhes específicos (ex: voltagem, cor, tamanho) caso as fotos não deixem claro.`;
+      
+      setFormData(prev => ({ ...prev, description: factualDescription }));
       setIsGenerating(false);
     }, 1500);
   };
