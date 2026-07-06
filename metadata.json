@@ -1,0 +1,6 @@
+{
+  "name": "ShopConnect",
+  "description": "Global marketplace for gaming gear and PCs with secure trading, multilanguage support, and verified listings.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,16 @@
+{
+  "name": "ShopConnect",
+  "short_name": "ShopConnect",
+  "description": "Marketplace global de jogos e peças de PC focado em vendas seguras.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#020617",
+  "theme_color": "#0f172a",
+  "icons": [
+    {
+      "src": "/logoconnect.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

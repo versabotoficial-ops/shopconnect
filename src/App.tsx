@@ -1,0 +1,310 @@
+import { useState, useEffect } from 'react';
+import { Navigation } from './components/Navigation';
+import { BottomNavigation } from './components/BottomNavigation';
+import { MOCK_PRODUCTS } from './data';
+import { ProductCard } from './components/ProductCard';
+import { motion, AnimatePresence } from 'motion/react';
+import { ProductDetail } from './views/ProductDetail';
+import { MessagesView } from './views/MessagesView';
+import { SellerDashboard } from './views/SellerDashboard';
+import { LoginView } from './views/LoginView';
+import { ProfileView } from './views/ProfileView';
+import { OrdersView } from './views/OrdersView';
+import { SettingsView } from './views/SettingsView';
+import { CURRENT_USER } from './data';
+import { LOGO_URL } from './lib/logo';
+import { supabase } from './lib/supabase';
+
+export default function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    return localStorage.getItem('isAuthenticated') === 'true';
+  });
+  const [userId, setUserId] = useState<string>('guest');
+  const [view, setView] = useState('home');
+  const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
+  const [categoryFilter, setCategoryFilter] = useState('Tudo');
+
+  const [categories, setCategories] = useState<string[]>(() => {
+    const saved = localStorage.getItem('customCategories');
+    if (saved) return JSON.parse(saved);
+    return ['Tudo', 'Computadores', 'Video Games', 'Jogos', 'Acessórios'];
+  });
+
+  const [products, setProducts] = useState(MOCK_PRODUCTS);
+
+  const handleAddProduct = (newProduct: any) => {
+    setProducts([newProduct, ...products]);
+    setView('home');
+  };
+
+  const defaultProfile = {
+    name: CURRENT_USER.name,
+    avatar: CURRENT_USER.avatar,
+    email: `${CURRENT_USER.id}@usuario.shopconnect.com`,
+    location: 'São Paulo, SP - Brasil',
+    birthDate: '1990-05-15',
+    gender: 'Masculino',
+    memberSince: new Date().getFullYear().toString(),
+  };
+
+  const [userProfile, setUserProfile] = useState(() => {
+    const saved = localStorage.getItem('userProfile_guest');
+    if (saved) return JSON.parse(saved);
+    return defaultProfile;
+  });
+
+  const handleUpdateProfile = (updatedProfile: any) => {
+    setUserProfile(updatedProfile);
+    localStorage.setItem(`userProfile_${userId}`, JSON.stringify(updatedProfile));
+  };
+
+  // Carrega perfil salvo de um usuário específico
+  const loadProfileForUser = (uid: string, supabaseUser: any) => {
+    const profileKey = `userProfile_${uid}`;
+    const saved = localStorage.getItem(profileKey);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      setUserProfile(parsed);
+    } else {
+      // Primeira vez desse usuário: usa dados do Google/Facebook
+      const freshProfile = {
+        name: supabaseUser.user_metadata?.full_name || defaultProfile.name,
+        avatar: supabaseUser.user_metadata?.avatar_url || defaultProfile.avatar,
+        email: supabaseUser.email || defaultProfile.email,
+        location: 'Brasil',
+        birthDate: '',
+        gender: 'Não informar',
+        memberSince: new Date().getFullYear().toString(),
+      };
+      setUserProfile(freshProfile);
+      localStorage.setItem(profileKey, JSON.stringify(freshProfile));
+    }
+  };
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        setIsAuthenticated(true);
+        setUserId(session.user.id);
+        loadProfileForUser(session.user.id, session.user);
+      }
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session) {
+        setIsAuthenticated(true);
+        setUserId(session.user.id);
+        loadProfileForUser(session.user.id, session.user);
+        setView('home');
+      } else {
+        setIsAuthenticated(false);
+        setUserId('guest');
+        const saved = localStorage.getItem('userProfile_guest');
+        setUserProfile(saved ? JSON.parse(saved) : defaultProfile);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleLogin = () => {
+    setIsAuthenticated(true);
+    localStorage.setItem('isAuthenticated', 'true');
+    setView('home');
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setIsAuthenticated(false);
+    setUserId('guest');
+    // Reseta para o perfil padrão de convidado
+    const saved = localStorage.getItem('userProfile_guest');
+    setUserProfile(saved ? JSON.parse(saved) : defaultProfile);
+    localStorage.removeItem('isAuthenticated');
+  };
+
+  const handleProductClick = (id: string) => {
+    setSelectedProductId(id);
+    setView('product');
+  };
+
+  const handleBackToHome = () => {
+    setSelectedProductId(null);
+    setView('home');
+  };
+
+  const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
+
+  if (!isAuthenticated) {
+    return <LoginView onLogin={handleLogin} />;
+  }
+
+  return (
+    <div className="h-[100dvh] flex flex-col bg-slate-50 font-sans text-slate-900 selection:bg-indigo-500/30">
+      <div className="shrink-0">
+        <Navigation currentView={view} setView={setView} onLogout={handleLogout} userProfile={userProfile} unreadMessagesCount={unreadMessagesCount} />
+      </div>
+      
+      <main className={`flex-1 flex flex-col max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 ${view === 'messages' ? 'py-4' : 'py-8'} overflow-hidden pb-20 sm:pb-8`}>
+        <AnimatePresence mode="wait">
+          {view === 'home' && (
+            <motion.div
+              key="home"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+              className="flex-1 overflow-y-auto min-h-0 pb-8"
+            >
+              {/* Banner de boas-vindas com a logo */}
+              <div className="mb-8 bg-gradient-to-r from-indigo-600 to-indigo-800 rounded-2xl p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-lg overflow-hidden relative">
+                <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 80% 50%, white 0%, transparent 60%)' }} />
+                <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 relative z-10">
+                  <img
+                    src={LOGO_URL}
+                    alt="ShopConnect"
+                    className="h-14 sm:h-16 w-auto object-contain drop-shadow-lg"
+                  />
+                  <div className="text-center sm:text-left">
+                    <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">Bem-vindo ao ShopConnect</h1>
+                    <p className="text-indigo-200 mt-1 text-sm sm:text-base">O marketplace gamer mais seguro do Brasil 🎮</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setView('dashboard')}
+                  className="relative z-10 whitespace-nowrap bg-white text-indigo-700 font-semibold px-5 py-2.5 rounded-full text-sm shadow hover:bg-indigo-50 transition-colors"
+                >
+                  + Anunciar agora
+                </button>
+              </div>
+
+              <div className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div>
+                  <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Anúncios recentes</h2>
+                  <p className="text-slate-500 mt-1">O que você está procurando hoje?</p>
+                </div>
+                <div className="flex gap-2 overflow-x-auto pb-2 sm:pb-0 w-full sm:w-auto items-center">
+                  {categories.map(cat => (
+                    <button 
+                      key={cat} 
+                      onClick={() => setCategoryFilter(cat)}
+                      className={`whitespace-nowrap px-4 py-2 bg-white border rounded-full text-sm font-medium transition-colors shadow-sm ${
+                        categoryFilter === cat 
+                          ? 'border-indigo-600 bg-indigo-50 text-indigo-700' 
+                          : 'border-slate-200 text-slate-700 hover:bg-indigo-50 hover:border-indigo-200 hover:text-indigo-700'
+                      }`}
+                    >
+                      {cat}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {products.filter(product => {
+                  if (categoryFilter === 'Tudo') return true;
+                  if (categoryFilter === 'Computadores' && product.category === 'pc') return true;
+                  if (categoryFilter === 'Video Games' && product.category === 'consoles') return true;
+                  if (categoryFilter === 'Jogos' && product.category === 'games') return true;
+                  if (categoryFilter === 'Acessórios' && product.category === 'accessories') return true;
+                  // For newly added categories
+                  return product.category.toLowerCase() === categoryFilter.toLowerCase();
+                }).map(product => (
+                  <ProductCard 
+                    key={product.id} 
+                    product={product} 
+                    onClick={() => handleProductClick(product.id)} 
+                  />
+                ))}
+              </div>
+            </motion.div>
+          )}
+
+          {view === 'product' && selectedProductId && (
+            <motion.div
+              key="product"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.2 }}
+              className="flex-1 overflow-y-auto min-h-0 pb-8"
+            >
+              <ProductDetail 
+                productId={selectedProductId} 
+                products={products}
+                onBack={handleBackToHome}
+                onMessage={() => setView('messages')}
+              />
+            </motion.div>
+          )}
+
+          {view === 'messages' && (
+            <motion.div
+              key="messages"
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.98 }}
+              transition={{ duration: 0.2 }}
+              className="flex-1 min-h-0 w-full h-full"
+            >
+              <MessagesView userProfile={userProfile} onUnreadChange={setUnreadMessagesCount} />
+            </motion.div>
+          )}
+
+          {view === 'dashboard' && (
+            <motion.div
+              key="dashboard"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.2 }}
+              className="flex-1 overflow-y-auto min-h-0 pb-8"
+            >
+              <SellerDashboard onAddProduct={handleAddProduct} categories={categories} userProfile={userProfile} products={products} />
+            </motion.div>
+          )}
+
+          {view === 'profile' && (
+            <motion.div
+              key="profile"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.2 }}
+              className="flex-1 overflow-y-auto min-h-0 pb-8"
+            >
+              <ProfileView userProfile={userProfile} onUpdateProfile={handleUpdateProfile} products={products} />
+            </motion.div>
+          )}
+
+          {view === 'orders' && (
+            <motion.div
+              key="orders"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.2 }}
+              className="flex-1 overflow-y-auto min-h-0 pb-8"
+            >
+              <OrdersView />
+            </motion.div>
+          )}
+
+          {view === 'settings' && (
+            <motion.div
+              key="settings"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.2 }}
+              className="flex-1 overflow-y-auto min-h-0 pb-8"
+            >
+              <SettingsView userProfile={userProfile} categories={categories} setCategories={setCategories} />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </main>
+      <BottomNavigation currentView={view} setView={setView} unreadMessagesCount={unreadMessagesCount} />
+    </div>
+  );
+}
