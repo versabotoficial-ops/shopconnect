@@ -11,6 +11,8 @@ import {
   X,
   Image as ImageIcon,
   CheckCircle2,
+  Sparkles,
+  Loader2,
 } from "lucide-react";
 import {
   LineChart,
@@ -223,6 +225,28 @@ function CreateAdModal({
     description: "",
     images: [] as string[],
   });
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  const generateAIDescription = () => {
+    if (!formData.title.trim()) return;
+    setIsGenerating(true);
+    
+    setTimeout(() => {
+      const title = formData.title.trim();
+      const condition = formData.condition;
+      const price = formData.price;
+      
+      const templates = [
+        `🔥 **${title}** — Oportunidade imperdível para quem busca qualidade e bom preço!\n⭐ Produto em estado ${condition.toLowerCase()}, funcionando perfeitamente e pronto para uso imediato.\n📦 Envio rápido e seguro para todo o Brasil. Embalagem reforçada com total cuidado.\n💰 Aproveite ${price ? 'por apenas R$ ' + price + '!' : 'essa oferta exclusiva!'} Não perca essa chance! 🚀`,
+        `✨ **${title}** disponível agora no ShopConnect!\n🏷️ Condição: ${condition} | Produto verificado e com garantia de satisfação total.\n🎯 Ideal para quem procura o melhor custo-benefício. Qualidade premium garantida!\n📲 Compre agora e receba em casa com toda segurança. ${price ? 'Valor: R$ ' + price : 'Preço imbatível!'} 🛒`,
+        `🌟 Chegou o que você estava esperando: **${title}**!\n💎 Estado: ${condition} — Produto de alta qualidade, testado e aprovado.\n🚚 Frete para todo o Brasil! Entrega rápida e rastreável.\n🔒 Compra 100% segura pelo ShopConnect. ${price ? 'Apenas R$ ' + price + ' — ' : ''}Garanta o seu! 💥`,
+      ];
+      
+      const randomIndex = Math.floor(Math.random() * templates.length);
+      setFormData(prev => ({ ...prev, description: templates[randomIndex] }));
+      setIsGenerating(false);
+    }, 1500);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -439,12 +463,30 @@ function CreateAdModal({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              Descrição
-            </label>
+            <div className="flex justify-between items-center mb-1">
+              <label className="block text-sm font-medium text-slate-700">
+                Descrição
+              </label>
+              <button
+                type="button"
+                onClick={generateAIDescription}
+                disabled={!formData.title.trim() || isGenerating}
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-full transition-all duration-300 ${
+                  !formData.title.trim() || isGenerating
+                    ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                    : 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white hover:from-violet-700 hover:to-indigo-700 shadow-sm hover:shadow-md'
+                }`}
+              >
+                {isGenerating ? (
+                  <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Gerando...</>
+                ) : (
+                  <><Sparkles className="w-3.5 h-3.5" /> Gerar com IA</>
+                )}
+              </button>
+            </div>
             <textarea
-              rows={4}
-              placeholder="Descreva seu produto em detalhes..."
+              rows={5}
+              placeholder="Descreva seu produto em detalhes ou use o botão 'Gerar com IA' acima..."
               value={formData.description}
               onChange={(e) =>
                 setFormData({ ...formData, description: e.target.value })
