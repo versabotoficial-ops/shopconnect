@@ -7,12 +7,14 @@ export function ProfileView({
   products,
   onDeleteProduct,
   onEditProduct,
+  isOwner = false,
 }: {
   userProfile: any;
   onUpdateProfile: (p: any) => void;
   products: any[];
   onDeleteProduct?: (id: string) => void;
   onEditProduct?: (product: any) => void;
+  isOwner?: boolean;
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState(userProfile);
@@ -140,28 +142,32 @@ export function ProfileView({
             </div>
 
             <div className="flex space-x-2">
-              {isEditing ? (
+              {isOwner && (
                 <>
-                  <button
-                    onClick={handleCancel}
-                    className="px-4 py-2 border border-slate-300 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors flex items-center"
-                  >
-                    <X className="w-4 h-4 mr-2" /> Cancelar
-                  </button>
-                  <button
-                    onClick={handleSave}
-                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors flex items-center"
-                  >
-                    <Check className="w-4 h-4 mr-2" /> Salvar
-                  </button>
+                  {isEditing ? (
+                    <>
+                      <button
+                        onClick={handleCancel}
+                        className="px-4 py-2 border border-slate-300 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors flex items-center"
+                      >
+                        <X className="w-4 h-4 mr-2" /> Cancelar
+                      </button>
+                      <button
+                        onClick={handleSave}
+                        className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors flex items-center"
+                      >
+                        <Check className="w-4 h-4 mr-2" /> Salvar
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      onClick={() => setIsEditing(true)}
+                      className="px-4 py-2 border border-slate-300 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors flex items-center"
+                    >
+                      <Edit2 className="w-4 h-4 mr-2" /> Editar Perfil
+                    </button>
+                  )}
                 </>
-              ) : (
-                <button
-                  onClick={() => setIsEditing(true)}
-                  className="px-4 py-2 border border-slate-300 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors flex items-center"
-                >
-                  <Edit2 className="w-4 h-4 mr-2" /> Editar Perfil
-                </button>
               )}
             </div>
           </div>
@@ -386,20 +392,24 @@ export function ProfileView({
                         </span>
                       </div>
                       <div className="flex gap-2 flex-shrink-0">
-                        <button
-                          onClick={() => setEditingAd(product)}
-                          className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
-                          title="Editar"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteAd(product.id)}
-                          className="p-2 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                          title="Excluir"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        {isOwner && (
+                          <>
+                            <button
+                              onClick={() => setEditingAd(product)}
+                              className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                              title="Editar"
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteAd(product.id)}
+                              className="p-2 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                              title="Excluir"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </>
+                        )}
                       </div>
                     </div>
                   )}
