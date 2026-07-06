@@ -50,6 +50,18 @@ export default function App() {
     handleSetView('home');
   };
 
+  const handleDeleteProduct = (id: string) => {
+    const updated = products.filter((p: any) => p.id !== id);
+    setProducts(updated);
+    localStorage.setItem('global_products', JSON.stringify(updated));
+  };
+
+  const handleEditProduct = (updatedProduct: any) => {
+    const updated = products.map((p: any) => p.id === updatedProduct.id ? updatedProduct : p);
+    setProducts(updated);
+    localStorage.setItem('global_products', JSON.stringify(updated));
+  };
+
   const defaultProfile = {
     name: CURRENT_USER.name,
     avatar: CURRENT_USER.avatar,
@@ -290,7 +302,7 @@ export default function App() {
               transition={{ duration: 0.2 }}
               className="flex-1 overflow-y-auto min-h-0 pb-8"
             >
-              <ProfileView userProfile={userProfile} onUpdateProfile={handleUpdateProfile} products={products} />
+              <ProfileView userProfile={userProfile} onUpdateProfile={handleUpdateProfile} products={products} onDeleteProduct={handleDeleteProduct} onEditProduct={handleEditProduct} />
             </motion.div>
           )}
 
