@@ -20,7 +20,14 @@ export default function App() {
     return localStorage.getItem('isAuthenticated') === 'true';
   });
   const [userId, setUserId] = useState<string>('guest');
-  const [view, setView] = useState('home');
+  const [view, setView] = useState(() => {
+    return localStorage.getItem('currentView') || 'home';
+  });
+
+  const handleSetView = (newView: string) => {
+    setView(newView);
+    localStorage.setItem('currentView', newView);
+  };
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [categoryFilter, setCategoryFilter] = useState('Tudo');
 
@@ -34,7 +41,7 @@ export default function App() {
 
   const handleAddProduct = (newProduct: any) => {
     setProducts([newProduct, ...products]);
-    setView('home');
+    handleSetView('home');
   };
 
   const defaultProfile = {
@@ -90,17 +97,21 @@ export default function App() {
       }
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (session) {
         setIsAuthenticated(true);
+        localStorage.setItem('isAuthenticated', 'true');
         setUserId(session.user.id);
         loadProfileForUser(session.user.id, session.user);
-        setView('home');
+        if (event === 'SIGNED_IN') {
+          handleSetView('home');
+        }
       } else {
         setIsAuthenticated(false);
         setUserId('guest');
         const saved = localStorage.getItem('userProfile_guest');
         setUserProfile(saved ? JSON.parse(saved) : defaultProfile);
+        localStorage.removeItem('isAuthenticated');
       }
     });
 
@@ -110,7 +121,7 @@ export default function App() {
   const handleLogin = () => {
     setIsAuthenticated(true);
     localStorage.setItem('isAuthenticated', 'true');
-    setView('home');
+    handleSetView('home');
   };
 
   const handleLogout = async () => {
@@ -125,12 +136,12 @@ export default function App() {
 
   const handleProductClick = (id: string) => {
     setSelectedProductId(id);
-    setView('product');
+    handleSetView('product');
   };
 
   const handleBackToHome = () => {
     setSelectedProductId(null);
-    setView('home');
+    handleSetView('home');
   };
 
   const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
@@ -142,7 +153,7 @@ export default function App() {
   return (
     <div className="h-[100dvh] flex flex-col bg-slate-50 font-sans text-slate-900 selection:bg-indigo-500/30">
       <div className="shrink-0">
-        <Navigation currentView={view} setView={setView} onLogout={handleLogout} userProfile={userProfile} unreadMessagesCount={unreadMessagesCount} />
+        <Navigation currentView={view} setView={handleSetView} onLogout={handleLogout} userProfile={userProfile} unreadMessagesCount={unreadMessagesCount} />
       </div>
       
       <main className={`flex-1 flex flex-col max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 ${view === 'messages' ? 'py-4' : 'py-8'} overflow-hidden pb-20 sm:pb-8`}>
@@ -171,7 +182,7 @@ export default function App() {
                   </div>
                 </div>
                 <button
-                  onClick={() => setView('dashboard')}
+                  onClick={() => handleSetView('dashboard')}
                   className="relative z-10 whitespace-nowrap bg-white text-indigo-700 font-semibold px-5 py-2.5 rounded-full text-sm shadow hover:bg-indigo-50 transition-colors"
                 >
                   + Anunciar agora
@@ -233,7 +244,7 @@ export default function App() {
                 productId={selectedProductId} 
                 products={products}
                 onBack={handleBackToHome}
-                onMessage={() => setView('messages')}
+                onMessage={() => handleSetView('messages')}
               />
             </motion.div>
           )}
@@ -304,7 +315,7 @@ export default function App() {
           )}
         </AnimatePresence>
       </main>
-      <BottomNavigation currentView={view} setView={setView} unreadMessagesCount={unreadMessagesCount} />
+      <BottomNavigation currentView={view} setView={handleSetView} unreadMessagesCount={unreadMessagesCount} />
     </div>
   );
 }
