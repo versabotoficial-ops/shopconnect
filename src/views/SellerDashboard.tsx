@@ -302,11 +302,24 @@ Este é um anúncio verificado da categoria ${formData.category}. As caracterís
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      const newImages = Array.from(e.target.files).map(file => URL.createObjectURL(file));
-      setFormData(prev => ({
-        ...prev,
-        images: [...prev.images, ...newImages].slice(0, 6)
-      }));
+      const files = Array.from(e.target.files);
+      
+      const promises = files.map(file => {
+        return new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            resolve(reader.result as string);
+          };
+          reader.readAsDataURL(file);
+        });
+      });
+
+      Promise.all(promises).then(base64Images => {
+        setFormData(prev => ({
+          ...prev,
+          images: [...prev.images, ...base64Images].slice(0, 6)
+        }));
+      });
     }
   };
 
