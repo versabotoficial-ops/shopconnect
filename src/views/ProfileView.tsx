@@ -74,7 +74,7 @@ export function ProfileView({
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-6">
+    <div className="w-full p-6 space-y-6">
       {/* Card principal do perfil */}
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
         <div

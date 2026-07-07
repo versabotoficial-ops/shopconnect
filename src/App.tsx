@@ -194,12 +194,12 @@ export default function App() {
   }
 
   return (
-    <div className="h-[100dvh] flex flex-col bg-slate-50 font-sans text-slate-900 selection:bg-indigo-500/30">
+    <div className="w-full h-full flex flex-col font-sans selection:bg-indigo-500/30">
       <div className="shrink-0">
         <Navigation currentView={view} setView={handleSetView} onLogout={handleLogout} userProfile={userProfile} unreadMessagesCount={unreadMessagesCount} />
       </div>
       
-      <main className={`flex-1 flex flex-col w-full px-4 sm:px-6 ${view === 'messages' ? 'py-2' : 'py-4'} overflow-hidden pb-20 sm:pb-4`}>
+      <main className={`flex-1 flex flex-col w-full ${view === 'messages' ? 'px-0 py-0' : 'px-4 sm:px-6 py-4'} overflow-hidden pb-20 sm:pb-4`}>
         <AnimatePresence mode="wait">
           {view === 'home' && (
             <motion.div
@@ -211,7 +211,7 @@ export default function App() {
               className="flex-1 overflow-y-auto min-h-0 pb-8"
             >
               {/* Banner de boas-vindas com a logo */}
-              <div className="mb-8 bg-gradient-to-r from-indigo-600 to-indigo-800 rounded-2xl p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-lg overflow-hidden relative">
+              <div className="mb-8 bg-white/5 backdrop-blur-md rounded-2xl p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-[0_8px_32px_rgba(0,0,0,0.12)] border border-white/10 overflow-hidden relative">
                 <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 80% 50%, white 0%, transparent 60%)' }} />
                 <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 relative z-10">
                   <img
@@ -226,7 +226,7 @@ export default function App() {
                 </div>
                 <button
                   onClick={() => handleSetView('dashboard')}
-                  className="relative z-10 whitespace-nowrap bg-white text-indigo-700 font-semibold px-5 py-2.5 rounded-full text-sm shadow hover:bg-indigo-50 transition-colors"
+                  className="relative z-10 whitespace-nowrap bg-indigo-500 text-white font-semibold px-5 py-2.5 rounded-full text-sm shadow hover:bg-indigo-400 transition-colors"
                 >
                   + Anunciar agora
                 </button>
@@ -234,18 +234,18 @@ export default function App() {
 
               <div className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
-                  <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Anúncios recentes</h2>
-                  <p className="text-slate-500 mt-1">O que você está procurando hoje?</p>
+                  <h2 className="text-2xl font-bold text-white tracking-tight">Anúncios recentes</h2>
+                  <p className="text-indigo-200 mt-1">O que você está procurando hoje?</p>
                 </div>
-                <div className="flex gap-2 overflow-x-auto pb-2 sm:pb-0 w-full sm:w-auto items-center">
+                <div className="flex gap-2 overflow-x-auto pb-2 sm:pb-0 w-full sm:w-auto items-center no-scrollbar">
                   {categories.map(cat => (
                     <button 
                       key={cat} 
                       onClick={() => setCategoryFilter(cat)}
-                      className={`whitespace-nowrap px-4 py-2 bg-white border rounded-full text-sm font-medium transition-colors shadow-sm ${
+                      className={`whitespace-nowrap px-4 py-2 border rounded-full text-sm font-medium transition-all shadow-sm ${
                         categoryFilter === cat 
-                          ? 'border-indigo-600 bg-indigo-50 text-indigo-700' 
-                          : 'border-slate-200 text-slate-700 hover:bg-indigo-50 hover:border-indigo-200 hover:text-indigo-700'
+                          ? 'border-indigo-400 bg-indigo-500 text-white' 
+                          : 'border-white/20 bg-white/5 text-indigo-100 hover:bg-white/10 hover:border-white/30'
                       }`}
                     >
                       {cat}

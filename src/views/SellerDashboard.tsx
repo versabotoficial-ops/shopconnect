@@ -50,13 +50,13 @@ export function SellerDashboard({
   const pendingDeliveries = userProfile.pendingDeliveries || 0;
 
   return (
-    <div className="max-w-7xl mx-auto space-y-8">
+    <div className="w-full space-y-8">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
+          <h1 className="text-3xl font-bold text-white tracking-tight">
             Painel do Vendedor
           </h1>
-          <p className="text-slate-500 mt-1">
+          <p className="text-indigo-200 mt-1">
             Gerencie seu inventário, vendas e anúncios.
           </p>
         </div>

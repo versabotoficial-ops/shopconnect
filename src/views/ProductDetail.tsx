@@ -13,7 +13,7 @@ export function ProductDetail({ productId, products, onBack, onMessage, onViewSe
   if (!product) return <div>Product not found</div>;
 
   return (
-    <div className="max-w-5xl mx-auto">
+    <div className="w-full">
       <button onClick={onBack} className="flex items-center text-slate-400 hover:text-white transition-colors mb-6 text-sm font-medium">
         <ArrowLeft className="w-4 h-4 mr-2" /> Voltar para anúncios
       </button>

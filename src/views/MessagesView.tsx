@@ -329,7 +329,7 @@ export function MessagesView({ userProfile, onUnreadChange }: { userProfile?: an
   };
 
   return (
-    <div className="bg-white border border-slate-200 rounded-2xl h-full overflow-hidden flex shadow-sm">
+    <div className="bg-white h-full w-full overflow-hidden flex">
       {/* Sidebar */}
       <div
         className={`w-full md:w-80 border-r border-slate-200 flex-col bg-slate-50 shrink-0 ${activeChatId ? "hidden md:flex" : "flex"}`}

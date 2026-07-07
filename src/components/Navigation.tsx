@@ -26,7 +26,7 @@ export function Navigation({ currentView, setView, onLogout, userProfile, unread
   }, []);
 
   return (
-    <nav className="sticky top-0 z-50 w-full bg-white border-b border-slate-200 text-slate-700">
+    <nav className="sticky top-0 z-50 w-full bg-white/5 backdrop-blur-md border-b border-white/10 text-white">
       <div className="w-full px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16 items-center">
           <div className="flex items-center space-x-8">
@@ -34,8 +34,8 @@ export function Navigation({ currentView, setView, onLogout, userProfile, unread
               <img src={LOGO_URL} alt="ShopConnect" className="h-10 w-auto object-contain" />
             </div>
             <div className="hidden md:flex space-x-4">
-              <button onClick={() => setView('home')} className={`px-3 py-2 rounded-md text-sm font-medium ${currentView === 'home' ? 'bg-indigo-100 text-indigo-700' : 'hover:bg-slate-100 text-slate-600'}`}>Explorar</button>
-              <button onClick={() => setView('dashboard')} className={`px-3 py-2 rounded-md text-sm font-medium ${currentView === 'dashboard' ? 'bg-indigo-100 text-indigo-700' : 'hover:bg-slate-100 text-slate-600'}`}>Painel do Vendedor</button>
+              <button onClick={() => setView('home')} className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${currentView === 'home' ? 'bg-white/20 text-white' : 'hover:bg-white/10 text-indigo-100'}`}>Explorar</button>
+              <button onClick={() => setView('dashboard')} className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${currentView === 'dashboard' ? 'bg-white/20 text-white' : 'hover:bg-white/10 text-indigo-100'}`}>Painel do Vendedor</button>
             </div>
           </div>
           
@@ -46,14 +46,14 @@ export function Navigation({ currentView, setView, onLogout, userProfile, unread
               </div>
               <input 
                 type="text" 
-                className="block w-full pl-10 pr-3 py-2 border border-slate-300 rounded-lg leading-5 bg-white text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-indigo-600 focus:border-indigo-600 sm:text-sm transition-colors shadow-sm" 
-                placeholder="Buscar em todo o Brasil..." 
+                className="block w-full pl-10 pr-3 py-2.5 border border-white/20 rounded-xl leading-5 bg-white/10 text-white placeholder-indigo-200 focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/30 sm:text-sm transition-all shadow-inner backdrop-blur-sm" 
+                placeholder="Buscar produtos..." 
               />
             </div>
           </div>
 
           <div className="flex items-center space-x-4 sm:space-x-6">
-            <button className="text-slate-500 hover:text-indigo-600 transition-colors flex items-center text-sm">
+            <button className="text-indigo-200 hover:text-white transition-colors flex items-center text-sm">
               <Globe className="h-5 w-5 mr-1" />
               <span className="hidden sm:inline">PT</span>
             </button>
