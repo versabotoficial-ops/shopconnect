@@ -29,7 +29,7 @@ export function ProfileView({
   const coverInputRef = useRef<HTMLInputElement>(null);
 
   const myProducts = products.filter(
-    (p) => p.seller?.id === currentUserId
+    (p) => p.seller?.id === currentUserId || p.seller?.name === userProfile?.name
   );
   const activeListingsCount = myProducts.length;
   const rating = userProfile.rating || 0;

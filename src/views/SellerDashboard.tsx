@@ -41,7 +41,7 @@ export function SellerDashboard({
   const [showCreateModal, setShowCreateModal] = useState(false);
 
   const activeListingsCount = products.filter(
-    (p) => p.seller?.id === userId
+    (p) => p.seller?.id === userId || p.seller?.name === userProfile?.name
   ).length;
   
   const rating = userProfile.rating || 0;
