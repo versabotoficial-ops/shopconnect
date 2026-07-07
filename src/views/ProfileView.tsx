@@ -7,6 +7,8 @@ export function ProfileView({
   products,
   onDeleteProduct,
   onEditProduct,
+  currentUserId,
+  onViewSeller,
 }: {
   userProfile: any;
   onUpdateProfile: (p: any) => void;

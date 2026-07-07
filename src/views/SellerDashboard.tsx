@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { MOCK_DASHBOARD } from "../data";
 import { formatCurrency } from "../lib/utils";
 import { LOGO_URL } from "../lib/logo";
@@ -266,7 +266,7 @@ Este é um anúncio verificado da categoria ${formData.category}. As caracterís
     }, 1500);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!formData.title || !formData.price || !formData.location) return;
 
@@ -315,7 +315,7 @@ Este é um anúncio verificado da categoria ${formData.category}. As caracterís
           reader.onloadend = () => {
             resolve(reader.result as string);
           };
-          reader.readAsDataURL(file);
+          reader.readAsDataURL(file as Blob);
         });
       });
 
