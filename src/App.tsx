@@ -199,7 +199,7 @@ export default function App() {
         <Navigation currentView={view} setView={handleSetView} onLogout={handleLogout} userProfile={userProfile} unreadMessagesCount={unreadMessagesCount} />
       </div>
       
-      <main className={`flex-1 flex flex-col max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 ${view === 'messages' ? 'py-4' : 'py-8'} overflow-hidden pb-20 sm:pb-8`}>
+      <main className={`flex-1 flex flex-col w-full px-4 sm:px-6 ${view === 'messages' ? 'py-2' : 'py-4'} overflow-hidden pb-20 sm:pb-4`}>
         <AnimatePresence mode="wait">
           {view === 'home' && (
             <motion.div
