@@ -40,9 +40,13 @@ export function SellerDashboard({
 }) {
   const [showCreateModal, setShowCreateModal] = useState(false);
 
-  const activeListingsCount = products.filter(
-    (p) => p.seller?.id === userId || p.seller?.name === userProfile?.name
-  ).length;
+  // Filtro robusto: por ID exato OU por nome (fallback para anúncios antigos)
+  const activeListingsCount = products.filter((p) => {
+    if (!p.seller) return false;
+    const matchById = p.seller.id === userId;
+    const matchByName = userProfile?.name && p.seller.name === userProfile.name;
+    return matchById || matchByName;
+  }).length;
   
   const rating = userProfile.rating || 0;
   const reviewsCount = userProfile.reviewsCount || 0;

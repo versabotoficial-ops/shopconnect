@@ -28,9 +28,13 @@ export function ProfileView({
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
 
-  const myProducts = products.filter(
-    (p) => p.seller?.id === currentUserId || p.seller?.name === userProfile?.name
-  );
+  // Filtra anúncios: por ID exato OU por nome do perfil (fallback para anúncios antigos)
+  const myProducts = products.filter((p) => {
+    if (!p.seller) return false;
+    const matchById = p.seller.id === currentUserId;
+    const matchByName = userProfile?.name && p.seller.name === userProfile.name;
+    return matchById || matchByName;
+  });
   const activeListingsCount = myProducts.length;
   const rating = userProfile.rating || 0;
   const purchasesCount = userProfile.purchasesCount || 0;
