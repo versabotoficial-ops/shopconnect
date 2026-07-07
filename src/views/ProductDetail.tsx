@@ -5,7 +5,7 @@ import { Product } from '../types';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 
-export function ProductDetail({ productId, products, onBack, onMessage, onViewSeller }: { productId: string, products: Product[], onBack: () => void, onMessage: () => void, onViewSeller?: (sellerName: string) => void }) {
+export function ProductDetail({ productId, products, onBack, onMessage, onViewSeller }: { productId: string, products: Product[], onBack: () => void, onMessage: () => void, onViewSeller?: (id: string) => void }) {
   const product = products.find(p => p.id === productId);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -69,35 +69,26 @@ export function ProductDetail({ productId, products, onBack, onMessage, onViewSe
             <p className="text-slate-400 leading-relaxed text-sm">{product.description}</p>
           </div>
 
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 mb-6">
-            <div className="flex items-center justify-between flex-wrap gap-4">
-              <div className="flex items-center space-x-4">
-                <img src={product.seller.avatar} alt="Seller" className="w-12 h-12 rounded-full bg-slate-800 border-2 border-slate-700" />
-                <div>
-                  <h3 className="text-white font-medium">{product.seller.name}</h3>
-                  <div className="flex items-center text-sm text-slate-400 mt-0.5">
-                    <Star className="w-4 h-4 text-amber-400 mr-1 fill-amber-400" />
-                    <span>{product.seller.rating} ({product.seller.reviewsCount} avaliações)</span>
-                    {product.seller.isVerified && (
-                       <ShieldCheck className="w-4 h-4 text-indigo-400 ml-2" />
-                    )}
-                  </div>
+          <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 mb-6 flex items-center justify-between">
+            <div 
+              className="flex items-center space-x-4 cursor-pointer group"
+              onClick={() => onViewSeller && onViewSeller(product.seller.id)}
+            >
+              <img src={product.seller.avatar} alt="Seller" className="w-12 h-12 rounded-full bg-slate-800 border-2 border-slate-700 group-hover:border-indigo-500 transition-colors" />
+              <div>
+                <h3 className="text-white font-medium group-hover:text-indigo-400 transition-colors">{product.seller.name}</h3>
+                <div className="flex items-center text-sm text-slate-400 mt-0.5">
+                  <Star className="w-4 h-4 text-amber-400 mr-1 fill-amber-400" />
+                  <span>{product.seller.rating} ({product.seller.reviewsCount} avaliações)</span>
+                  {product.seller.isVerified && (
+                     <ShieldCheck className="w-4 h-4 text-indigo-400 ml-2" />
+                  )}
                 </div>
               </div>
-              <div className="flex flex-wrap gap-2">
-                {onViewSeller && (
-                  <button
-                    onClick={() => onViewSeller(product.seller.name)}
-                    className="bg-slate-800 hover:bg-slate-700 text-slate-200 px-4 py-2 rounded-lg font-medium transition-colors border border-slate-700 text-sm"
-                  >
-                    Ver perfil
-                  </button>
-                )}
-                <button onClick={onMessage} className="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2.5 rounded-lg font-medium transition-colors border border-slate-700 flex items-center text-sm">
-                  <Languages className="w-4 h-4 mr-2 text-indigo-400" /> Contato
-                </button>
-              </div>
             </div>
+            <button onClick={onMessage} className="bg-slate-800 hover:bg-slate-700 text-white px-6 py-2.5 rounded-lg font-medium transition-colors border border-slate-700 flex items-center">
+              <Languages className="w-4 h-4 mr-2 text-indigo-400" /> Contato (Tradução Automática)
+            </button>
           </div>
 
           <div className="space-y-4 bg-slate-900/50 border border-slate-800/50 rounded-xl p-5 flex-grow">

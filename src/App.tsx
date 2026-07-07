@@ -29,6 +29,7 @@ export default function App() {
     localStorage.setItem('currentView', newView);
   };
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
+  const [selectedSellerId, setSelectedSellerId] = useState<string | null>(null);
   const [categoryFilter, setCategoryFilter] = useState('Tudo');
 
   const [categories, setCategories] = useState<string[]>(() => {
@@ -152,25 +153,19 @@ export default function App() {
     localStorage.removeItem('isAuthenticated');
   };
 
-  const [viewingSellerProfile, setViewingSellerProfile] = useState<any>(null);
-
   const handleProductClick = (id: string) => {
     setSelectedProductId(id);
-    setViewingSellerProfile(null);
     handleSetView('product');
   };
 
-  const handleViewSeller = (sellerName: string) => {
-    // Encontra informações do vendedor a partir dos produtos
-    const sellerProduct = products.find((p: any) => p.seller?.name === sellerName);
-    if (sellerProduct) {
-      setViewingSellerProfile(sellerProduct.seller);
-      handleSetView('sellerProfile');
-    }
+  const handleViewSellerProfile = (sellerId: string) => {
+    setSelectedSellerId(sellerId);
+    handleSetView('seller-profile');
   };
 
   const handleBackToHome = () => {
     setSelectedProductId(null);
+    setSelectedSellerId(null);
     handleSetView('home');
   };
 
@@ -275,7 +270,7 @@ export default function App() {
                 products={products}
                 onBack={handleBackToHome}
                 onMessage={() => handleSetView('messages')}
-                onViewSeller={handleViewSeller}
+                onViewSeller={handleViewSellerProfile}
               />
             </motion.div>
           )}
@@ -302,7 +297,7 @@ export default function App() {
               transition={{ duration: 0.2 }}
               className="flex-1 overflow-y-auto min-h-0 pb-8"
             >
-              <SellerDashboard onAddProduct={handleAddProduct} categories={categories} userProfile={userProfile} products={products} />
+              <SellerDashboard onAddProduct={handleAddProduct} categories={categories} userProfile={userProfile} products={products} userId={userId} />
             </motion.div>
           )}
 
@@ -315,14 +310,7 @@ export default function App() {
               transition={{ duration: 0.2 }}
               className="flex-1 overflow-y-auto min-h-0 pb-8"
             >
-              <ProfileView 
-                userProfile={userProfile} 
-                onUpdateProfile={handleUpdateProfile} 
-                products={products} 
-                onDeleteProduct={handleDeleteProduct} 
-                onEditProduct={handleEditProduct}
-                isOwner={true}
-              />
+              <ProfileView userProfile={userProfile} onUpdateProfile={handleUpdateProfile} products={products} onDeleteProduct={handleDeleteProduct} onEditProduct={handleEditProduct} currentUserId={userId} onViewSeller={handleViewSellerProfile} />
             </motion.div>
           )}
 
@@ -339,6 +327,65 @@ export default function App() {
             </motion.div>
           )}
 
+          {view === 'seller-profile' && selectedSellerId && (() => {
+            const sellerProducts = products.filter((p: any) => p.seller?.id === selectedSellerId);
+            const sellerInfo = sellerProducts[0]?.seller || {};
+            return (
+              <motion.div
+                key="seller-profile"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.2 }}
+                className="flex-1 overflow-y-auto min-h-0 pb-8"
+              >
+                <div className="max-w-4xl mx-auto p-6 space-y-6">
+                  <button onClick={handleBackToHome} className="flex items-center gap-2 text-sm text-slate-500 hover:text-indigo-600 transition-colors mb-2">
+                    ← Voltar
+                  </button>
+                  <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div className="h-32 bg-gradient-to-r from-indigo-500 to-indigo-700" />
+                    <div className="px-6 pb-6 relative">
+                      <div className="flex flex-col sm:flex-row items-center sm:items-end justify-between -mt-12 sm:-mt-16 mb-4 space-y-4 sm:space-y-0">
+                        <div className="flex flex-col sm:flex-row items-center gap-4">
+                          <img src={sellerInfo.avatar || 'https://via.placeholder.com/80'} alt={sellerInfo.name} className="w-24 h-24 sm:w-32 sm:h-32 rounded-full border-4 border-white bg-slate-100 object-cover" />
+                          <div className="text-center sm:text-left mt-4 sm:mt-0">
+                            <h1 className="text-2xl font-bold text-slate-900">{sellerInfo.name || 'Vendedor'}</h1>
+                            <p className="text-slate-500 font-medium">Membro verificado ✓</p>
+                            <div className="flex items-center gap-1 mt-1">
+                              <span className="text-amber-400">★</span>
+                              <span className="text-sm font-medium text-slate-700">{sellerInfo.rating?.toFixed(1) || '5.0'}</span>
+                              <span className="text-sm text-slate-400">({sellerInfo.reviewsCount || 0} avaliações)</span>
+                            </div>
+                          </div>
+                        </div>
+                        <span className="text-xs bg-slate-100 text-slate-500 px-3 py-1.5 rounded-full">Perfil somente leitura</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                    <h2 className="text-lg font-bold text-slate-900 mb-4">Anúncios de {sellerInfo.name || 'Vendedor'}</h2>
+                    {sellerProducts.length === 0 ? (
+                      <p className="text-slate-400 text-sm">Nenhum anúncio ativo.</p>
+                    ) : (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {sellerProducts.map((p: any) => (
+                          <div key={p.id} onClick={() => handleProductClick(p.id)} className="border border-slate-100 rounded-xl overflow-hidden cursor-pointer hover:shadow-md transition-shadow">
+                            <img src={p.images?.[0]} alt={p.title} className="w-full h-36 object-cover bg-slate-100" />
+                            <div className="p-3">
+                              <p className="font-semibold text-slate-900 text-sm truncate">{p.title}</p>
+                              <p className="text-indigo-600 font-bold text-sm mt-1">R$ {p.price?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+            );
+          })()}
+
           {view === 'settings' && (
             <motion.div
               key="settings"
@@ -349,96 +396,6 @@ export default function App() {
               className="flex-1 overflow-y-auto min-h-0 pb-8"
             >
               <SettingsView userProfile={userProfile} categories={categories} setCategories={setCategories} />
-            </motion.div>
-          )}
-
-          {view === 'sellerProfile' && viewingSellerProfile && (
-            <motion.div
-              key="sellerProfile"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.2 }}
-              className="flex-1 overflow-y-auto min-h-0 pb-8"
-            >
-              <div className="max-w-4xl mx-auto p-6 space-y-6">
-                <button
-                  onClick={handleBackToHome}
-                  className="flex items-center text-slate-500 hover:text-slate-700 text-sm font-medium mb-2"
-                >
-                  ← Voltar
-                </button>
-                <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                  <div className="h-32 bg-gradient-to-r from-indigo-500 to-indigo-700" />
-                  <div className="px-6 pb-6">
-                    <div className="flex flex-col sm:flex-row items-center sm:items-end gap-4 -mt-12 sm:-mt-16 mb-6">
-                      <img
-                        src={viewingSellerProfile.avatar}
-                        alt={viewingSellerProfile.name}
-                        className="w-24 h-24 sm:w-32 sm:h-32 rounded-full border-4 border-white bg-slate-100 object-cover"
-                      />
-                      <div className="text-center sm:text-left">
-                        <h1 className="text-2xl font-bold text-slate-900">{viewingSellerProfile.name}</h1>
-                        <p className="text-slate-500 text-sm">Vendedor verificado no ShopConnect</p>
-                        {viewingSellerProfile.isVerified && (
-                          <span className="inline-flex items-center gap-1 text-xs text-indigo-600 bg-indigo-50 px-2 py-1 rounded-full mt-1 font-medium">
-                            ✓ Conta Verificada
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                      <div className="bg-amber-50 border border-amber-100 rounded-lg p-4 text-center">
-                        <p className="text-2xl font-bold text-amber-600">{viewingSellerProfile.rating?.toFixed(1) || '5.0'}</p>
-                        <p className="text-xs text-slate-500 mt-1">Avaliação</p>
-                      </div>
-                      <div className="bg-indigo-50 border border-indigo-100 rounded-lg p-4 text-center">
-                        <p className="text-2xl font-bold text-indigo-600">{viewingSellerProfile.reviewsCount || 0}</p>
-                        <p className="text-xs text-slate-500 mt-1">Avaliações recebidas</p>
-                      </div>
-                      <div className="bg-emerald-50 border border-emerald-100 rounded-lg p-4 text-center col-span-2 sm:col-span-1">
-                        <p className="text-2xl font-bold text-emerald-600">
-                          {products.filter((p: any) => p.seller?.name === viewingSellerProfile.name).length}
-                        </p>
-                        <p className="text-xs text-slate-500 mt-1">Anúncios ativos</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-                  <h2 className="text-lg font-bold text-slate-900 mb-4">Anúncios deste vendedor</h2>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {products
-                      .filter((p: any) => p.seller?.name === viewingSellerProfile.name)
-                      .map((product: any) => (
-                        <button
-                          key={product.id}
-                          onClick={() => handleProductClick(product.id)}
-                          className="flex gap-3 p-3 border border-slate-100 rounded-xl hover:bg-slate-50 transition-colors text-left"
-                        >
-                          <img
-                            src={product.images?.[0]}
-                            alt={product.title}
-                            className="w-16 h-16 rounded-lg object-cover bg-slate-100 border border-slate-200 flex-shrink-0"
-                          />
-                          <div className="flex-1 min-w-0">
-                            <p className="font-semibold text-slate-900 text-sm truncate">{product.title}</p>
-                            <p className="text-indigo-600 font-bold text-sm">
-                              R$ {product.price?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                            </p>
-                            <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${product.condition === 'Novo' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
-                              {product.condition}
-                            </span>
-                          </div>
-                        </button>
-                      ))}
-                  </div>
-                  {products.filter((p: any) => p.seller?.name === viewingSellerProfile.name).length === 0 && (
-                    <p className="text-slate-400 text-sm text-center py-6">Este vendedor ainda não tem anúncios publicados.</p>
-                  )}
-                </div>
-              </div>
             </motion.div>
           )}
         </AnimatePresence>

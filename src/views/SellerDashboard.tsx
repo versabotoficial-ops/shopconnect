@@ -30,16 +30,18 @@ export function SellerDashboard({
   categories,
   userProfile,
   products,
+  userId,
 }: {
   onAddProduct: (product: any) => void;
   categories: string[];
   userProfile: any;
   products: any[];
+  userId: string;
 }) {
   const [showCreateModal, setShowCreateModal] = useState(false);
 
   const activeListingsCount = products.filter(
-    (p) => p.seller?.id === "u1" || p.seller?.name === userProfile.name
+    (p) => p.seller?.id === userId
   ).length;
   
   const rating = userProfile.rating || 0;
@@ -199,6 +201,7 @@ export function SellerDashboard({
           onAdd={onAddProduct}
           categories={categories}
           userProfile={userProfile}
+          userId={userId}
         />
       )}
     </div>
@@ -210,11 +213,13 @@ function CreateAdModal({
   onAdd,
   categories,
   userProfile,
+  userId,
 }: {
   onClose: () => void;
   onAdd: (product: any) => void;
   categories: string[];
   userProfile: any;
+  userId: string;
 }) {
   const [formData, setFormData] = useState({
     title: "",
@@ -278,7 +283,7 @@ Este é um anúncio verificado da categoria ${formData.category}. As caracterís
       category: formData.category,
       condition: formData.condition,
       seller: {
-        id: "u1",
+        id: userId,
         name: userProfile?.name || "Você",
         rating: 5.0,
         reviewsCount: 0,
