@@ -120,8 +120,26 @@ export default function App() {
       if (session) {
         setIsAuthenticated(true);
         localStorage.setItem('isAuthenticated', 'true');
-        setUserId(session.user.id);
-        loadProfileForUser(session.user.id, session.user);
+        const uid = session.user.id;
+        setUserId(uid);
+        loadProfileForUser(uid, session.user);
+
+        // Migra anúncios antigos com seller.id='u1' para o userId real
+        const savedProds = localStorage.getItem('global_products');
+        if (savedProds) {
+          const prods = JSON.parse(savedProds);
+          const userName = session.user.user_metadata?.full_name;
+          const migrated = prods.map((p: any) => {
+            if (p.seller?.id === 'u1' || p.seller?.id === 'guest') {
+              // Só migra se o nome bater (produto deste usuário) ou se nunca houve outro dono definido
+              return { ...p, seller: { ...p.seller, id: uid, name: userName || p.seller?.name } };
+            }
+            return p;
+          });
+          localStorage.setItem('global_products', JSON.stringify(migrated));
+          setProducts(migrated);
+        }
+
         if (event === 'SIGNED_IN') {
           handleSetView('home');
         }
