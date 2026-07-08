@@ -97,21 +97,61 @@ export default function App() {
   const handleUpdateProfile = (updatedProfile: any) => {
     setUserProfile(updatedProfile);
     localStorage.setItem(`userProfile_${userId}`, JSON.stringify(updatedProfile));
+    
+    // Atualiza o nome e avatar do vendedor nos produtos existentes
+    const activeUserId = localStorage.getItem('userId') || userId || 'guest';
+    const updatedProducts = products.map((p: any) => {
+      if (p.seller?.id === activeUserId || p.seller?.id === 'guest' || p.seller?.id === 'u1') {
+        return {
+          ...p,
+          seller: {
+            ...p.seller,
+            id: activeUserId,
+            name: updatedProfile.name || p.seller.name,
+            avatar: updatedProfile.avatar || p.seller.avatar
+          }
+        };
+      }
+      return p;
+    });
+    setProducts(updatedProducts);
+    localStorage.setItem('global_products', JSON.stringify(updatedProducts));
   };
 
   // Carrega perfil salvo de um usuário específico
   const loadProfileForUser = (uid: string, supabaseUser: any) => {
     const profileKey = `userProfile_${uid}`;
     const saved = localStorage.getItem(profileKey);
+    
+    const providerAvatar = supabaseUser?.user_metadata?.avatar_url || supabaseUser?.user_metadata?.picture;
+    const providerName = supabaseUser?.user_metadata?.full_name || supabaseUser?.user_metadata?.name;
+
     if (saved) {
       const parsed = JSON.parse(saved);
+      let needsUpdate = false;
+
+      // Sempre atualiza o avatar com o do Google se existir
+      if (providerAvatar && parsed.avatar !== providerAvatar) {
+        parsed.avatar = providerAvatar;
+        needsUpdate = true;
+      }
+      
+      // Atualiza o nome se estiver vazio ou diferente e veio do Google
+      if (providerName && parsed.name !== providerName) {
+        parsed.name = providerName;
+        needsUpdate = true;
+      }
+
+      if (needsUpdate) {
+        localStorage.setItem(profileKey, JSON.stringify(parsed));
+      }
       setUserProfile(parsed);
     } else {
       // Primeira vez desse usuário: usa dados do Google/Facebook
       const freshProfile = {
-        name: supabaseUser.user_metadata?.full_name || defaultProfile.name,
-        avatar: supabaseUser.user_metadata?.avatar_url || defaultProfile.avatar,
-        email: supabaseUser.email || defaultProfile.email,
+        name: providerName || defaultProfile.name,
+        avatar: providerAvatar || defaultProfile.avatar,
+        email: supabaseUser?.email || defaultProfile.email,
         location: 'Brasil',
         birthDate: '',
         gender: 'Não informar',
@@ -141,15 +181,24 @@ export default function App() {
         localStorage.setItem('userId', uid);
         loadProfileForUser(uid, session.user);
 
-        // Migra anúncios antigos com seller.id='u1' para o userId real
+        // Migra anúncios antigos e atualiza nome/avatar dos anúncios existentes do usuário
         const savedProds = localStorage.getItem('global_products');
         if (savedProds) {
           const prods = JSON.parse(savedProds);
-          const userName = session.user.user_metadata?.full_name;
+          const userName = session.user.user_metadata?.full_name || session.user.user_metadata?.name;
+          const userAvatar = session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture;
+          
           const migrated = prods.map((p: any) => {
-            if (p.seller?.id === 'u1' || p.seller?.id === 'guest') {
-              // Só migra se o nome bater (produto deste usuário) ou se nunca houve outro dono definido
-              return { ...p, seller: { ...p.seller, id: uid, name: userName || p.seller?.name } };
+            if (p.seller?.id === uid || p.seller?.id === 'u1' || p.seller?.id === 'guest') {
+              return { 
+                ...p, 
+                seller: { 
+                  ...p.seller, 
+                  id: uid, 
+                  name: userName || p.seller?.name,
+                  avatar: userAvatar || p.seller?.avatar 
+                } 
+              };
             }
             return p;
           });
@@ -209,9 +258,12 @@ export default function App() {
     if (savedProds) {
       try {
         const prods = JSON.parse(savedProds);
+        const adminProfileToUse = saved ? JSON.parse(saved) : null;
+        const finalAvatar = adminProfileToUse?.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Admin';
+        
         const migrated = prods.map((p: any) => {
           if (p.seller?.id === 'u1' || p.seller?.id === 'guest') {
-            return { ...p, seller: { ...p.seller, id: 'admin', name: 'Administrador' } };
+            return { ...p, seller: { ...p.seller, id: 'admin', name: 'Administrador', avatar: finalAvatar } };
           }
           return p;
         });
