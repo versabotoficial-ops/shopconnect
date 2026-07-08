@@ -40,12 +40,14 @@ export function SellerDashboard({
 }) {
   const [showCreateModal, setShowCreateModal] = useState(false);
 
-  // Filtro robusto: por ID exato OU por nome (fallback para anúncios antigos)
+  // Filtro robusto: por ID exato (estado), por localStorage, ou por nome do perfil
+  const storedUserId = typeof window !== 'undefined' ? localStorage.getItem('userId') : null;
   const activeListingsCount = products.filter((p) => {
     if (!p.seller) return false;
     const matchById = p.seller.id === userId;
+    const matchByStoredId = storedUserId && p.seller.id === storedUserId;
     const matchByName = userProfile?.name && p.seller.name === userProfile.name;
-    return matchById || matchByName;
+    return matchById || matchByStoredId || matchByName;
   }).length;
   
   const rating = userProfile.rating || 0;

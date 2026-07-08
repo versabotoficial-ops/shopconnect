@@ -47,10 +47,22 @@ export default function App() {
   });
 
   const handleAddProduct = (newProduct: any) => {
-    const updated = [newProduct, ...products];
+    // Usa localStorage como fonte de verdade do userId (síncrono, não afetado pelo closure React)
+    const activeUserId = localStorage.getItem('userId') || userId || 'guest';
+    const activeName = userProfile?.name || 'Vendedor';
+    
+    const productWithCorrectOwner = {
+      ...newProduct,
+      seller: {
+        ...newProduct.seller,
+        id: activeUserId,
+        name: activeName,
+      }
+    };
+    const updated = [productWithCorrectOwner, ...products];
     setProducts(updated);
     localStorage.setItem('global_products', JSON.stringify(updated));
-    handleSetView('home');
+    // Não redireciona - mantém no dashboard para o usuário ver o anúncio publicado
   };
 
   const handleDeleteProduct = (id: string) => {

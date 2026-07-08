@@ -28,12 +28,14 @@ export function ProfileView({
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
 
-  // Filtra anúncios: por ID exato OU por nome do perfil (fallback para anúncios antigos)
+  // Filtra anúncios: por ID exato (estado), por localStorage, ou por nome do perfil
+  const storedUserId = typeof window !== 'undefined' ? localStorage.getItem('userId') : null;
   const myProducts = products.filter((p) => {
     if (!p.seller) return false;
     const matchById = p.seller.id === currentUserId;
+    const matchByStoredId = storedUserId && p.seller.id === storedUserId;
     const matchByName = userProfile?.name && p.seller.name === userProfile.name;
-    return matchById || matchByName;
+    return matchById || matchByStoredId || matchByName;
   });
   const activeListingsCount = myProducts.length;
   const rating = userProfile.rating || 0;
