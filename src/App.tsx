@@ -51,6 +51,7 @@ export default function App() {
     // Usa localStorage como fonte de verdade do userId (síncrono, não afetado pelo closure React)
     const activeUserId = localStorage.getItem('userId') || userId || 'guest';
     const activeName = userProfile?.name || 'Vendedor';
+    const activeAvatar = userProfile?.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Seller';
     
     const productWithCorrectOwner = {
       ...newProduct,
@@ -58,6 +59,7 @@ export default function App() {
         ...newProduct.seller,
         id: activeUserId,
         name: activeName,
+        avatar: activeAvatar,
       }
     };
     const updated = [productWithCorrectOwner, ...products];
