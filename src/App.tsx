@@ -50,8 +50,22 @@ export default function App() {
   const handleAddProduct = (newProduct: any) => {
     // Usa localStorage como fonte de verdade do userId (síncrono, não afetado pelo closure React)
     const activeUserId = localStorage.getItem('userId') || userId || 'guest';
-    const activeName = userProfile?.name || 'Vendedor';
-    const activeAvatar = userProfile?.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Seller';
+    
+    // Busca o perfil atualizado direto do localStorage
+    let activeName = 'Vendedor';
+    let activeAvatar = 'https://api.dicebear.com/7.x/avataaars/svg?seed=Seller';
+    
+    const savedProfile = localStorage.getItem(`userProfile_${activeUserId}`);
+    if (savedProfile) {
+      try {
+        const parsed = JSON.parse(savedProfile);
+        activeName = parsed.name || activeName;
+        activeAvatar = parsed.avatar || activeAvatar;
+      } catch (e) {}
+    } else if (userProfile) {
+      activeName = userProfile.name || activeName;
+      activeAvatar = userProfile.avatar || activeAvatar;
+    }
     
     const productWithCorrectOwner = {
       ...newProduct,
@@ -122,6 +136,26 @@ export default function App() {
   };
 
   // Carrega perfil salvo de um usuário específico
+  // Propaga avatar/nome do perfil para todos os produtos desse usuário
+  const syncAvatarToProducts = (uid: string, avatar: string, name: string) => {
+    if (!uid || uid === 'guest') return;
+    setProducts((prevProducts: any[]) => {
+      const needsUpdate = prevProducts.some(
+        (p: any) => p.seller?.id === uid &&
+          (p.seller?.avatar !== avatar || p.seller?.name !== name)
+      );
+      if (!needsUpdate) return prevProducts;
+      const updated = prevProducts.map((p: any) => {
+        if (p.seller?.id === uid) {
+          return { ...p, seller: { ...p.seller, id: uid, name: name || p.seller.name, avatar: avatar || p.seller.avatar } };
+        }
+        return p;
+      });
+      setTimeout(() => localStorage.setItem('global_products', JSON.stringify(updated)), 0);
+      return updated;
+    });
+  };
+
   const loadProfileForUser = (uid: string, supabaseUser: any) => {
     const profileKey = `userProfile_${uid}`;
     const saved = localStorage.getItem(profileKey);
@@ -129,29 +163,19 @@ export default function App() {
     const providerAvatar = supabaseUser?.user_metadata?.avatar_url || supabaseUser?.user_metadata?.picture;
     const providerName = supabaseUser?.user_metadata?.full_name || supabaseUser?.user_metadata?.name;
 
+    let finalProfile: any;
+
     if (saved) {
       const parsed = JSON.parse(saved);
-      let needsUpdate = false;
-
-      // Sempre atualiza o avatar com o do Google se existir
-      if (providerAvatar && parsed.avatar !== providerAvatar) {
-        parsed.avatar = providerAvatar;
-        needsUpdate = true;
-      }
-      
-      // Atualiza o nome se estiver vazio ou diferente e veio do Google
-      if (providerName && parsed.name !== providerName) {
-        parsed.name = providerName;
-        needsUpdate = true;
-      }
-
-      if (needsUpdate) {
-        localStorage.setItem(profileKey, JSON.stringify(parsed));
-      }
+      // Sempre usa o avatar/nome do provedor (Google) se disponível
+      if (providerAvatar) parsed.avatar = providerAvatar;
+      if (providerName) parsed.name = providerName;
+      localStorage.setItem(profileKey, JSON.stringify(parsed));
       setUserProfile(parsed);
+      finalProfile = parsed;
     } else {
-      // Primeira vez desse usuário: usa dados do Google/Facebook
-      const freshProfile = {
+      // Primeira vez desse usuário
+      finalProfile = {
         name: providerName || defaultProfile.name,
         avatar: providerAvatar || defaultProfile.avatar,
         email: supabaseUser?.email || defaultProfile.email,
@@ -160,8 +184,13 @@ export default function App() {
         gender: 'Não informar',
         memberSince: new Date().getFullYear().toString(),
       };
-      setUserProfile(freshProfile);
-      localStorage.setItem(profileKey, JSON.stringify(freshProfile));
+      setUserProfile(finalProfile);
+      localStorage.setItem(profileKey, JSON.stringify(finalProfile));
+    }
+
+    // Propaga imediatamente para os produtos 
+    if (finalProfile?.avatar || finalProfile?.name) {
+      syncAvatarToProducts(uid, finalProfile.avatar, finalProfile.name);
     }
   };
 
@@ -231,6 +260,15 @@ export default function App() {
     return () => subscription.unsubscribe();
   }, []);
 
+  // Sincroniza avatar/nome do perfil nos produtos sempre que mudar
+  // Usa localStorage para pegar o userId mais recente (evita race condition de closure)
+  useEffect(() => {
+    const activeUid = localStorage.getItem('userId') || userId;
+    if (!activeUid || activeUid === 'guest') return;
+    if (!userProfile?.avatar && !userProfile?.name) return;
+    syncAvatarToProducts(activeUid, userProfile.avatar, userProfile.name);
+  }, [userProfile?.avatar, userProfile?.name, userId]);
+
   const handleLogin = () => {
     setIsAuthenticated(true);
     localStorage.setItem('isAuthenticated', 'true');
@@ -240,10 +278,12 @@ export default function App() {
     // Carrega ou inicializa perfil para o admin
     const profileKey = 'userProfile_admin';
     const saved = localStorage.getItem(profileKey);
+    let adminProfile: any;
     if (saved) {
-      setUserProfile(JSON.parse(saved));
+      adminProfile = JSON.parse(saved);
+      setUserProfile(adminProfile);
     } else {
-      const adminProfile = {
+      adminProfile = {
         name: 'Administrador',
         avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Admin',
         email: 'adminshopconnect@support.com',
@@ -254,6 +294,11 @@ export default function App() {
       };
       setUserProfile(adminProfile);
       localStorage.setItem(profileKey, JSON.stringify(adminProfile));
+    }
+    
+    // Propaga avatar para todos os produtos do admin imediatamente
+    if (adminProfile?.avatar) {
+      syncAvatarToProducts('admin', adminProfile.avatar, adminProfile.name);
     }
 
     // Migra anúncios antigos ou guest para o admin
@@ -494,7 +539,12 @@ export default function App() {
                     <div className="px-6 pb-6 relative">
                       <div className="flex flex-col sm:flex-row items-center sm:items-end justify-between -mt-12 sm:-mt-16 mb-4 space-y-4 sm:space-y-0">
                         <div className="flex flex-col sm:flex-row items-center gap-4">
-                          <img src={sellerInfo.avatar || 'https://via.placeholder.com/80'} alt={sellerInfo.name} className="w-24 h-24 sm:w-32 sm:h-32 rounded-full border-4 border-white bg-slate-100 object-cover" />
+                          <img 
+                            src={sellerInfo.avatar || 'https://via.placeholder.com/80'} 
+                            alt={sellerInfo.name} 
+                            className="w-24 h-24 sm:w-32 sm:h-32 rounded-full border-4 border-white bg-slate-100 object-cover" 
+                            referrerPolicy="no-referrer"
+                          />
                           <div className="text-center sm:text-left mt-4 sm:mt-0">
                             <h1 className="text-2xl font-bold text-slate-900">{sellerInfo.name || 'Vendedor'}</h1>
                             <p className="text-slate-500 font-medium">Membro verificado ✓</p>

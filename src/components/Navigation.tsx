@@ -100,7 +100,12 @@ export function Navigation({ currentView, setView, onLogout, userProfile, unread
                   setShowNotifications(false);
                 }}
               >
-                <img src={userProfile?.avatar || CURRENT_USER.avatar} alt="Profile" className="h-8 w-8 rounded-full bg-slate-100 border border-slate-200 hover:ring-2 hover:ring-indigo-200 transition-all" />
+                <img 
+                  src={userProfile?.avatar || CURRENT_USER.avatar} 
+                  alt="Profile" 
+                  className="h-8 w-8 rounded-full bg-slate-100 border border-slate-200 hover:ring-2 hover:ring-indigo-200 transition-all" 
+                  referrerPolicy="no-referrer"
+                />
               </div>
               {showProfileMenu && (
                 <div className="absolute right-0 mt-3 w-48 bg-white rounded-lg shadow-xl border border-slate-100 z-50 animate-in fade-in zoom-in-95 duration-100">

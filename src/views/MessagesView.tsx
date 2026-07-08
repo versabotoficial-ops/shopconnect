@@ -402,6 +402,7 @@ export function MessagesView({ userProfile, currentUserId, onUnreadChange, initi
                       src={participant.avatar}
                       alt=""
                       className="w-10 h-10 rounded-full bg-slate-200 object-cover"
+                      referrerPolicy="no-referrer"
                     />
                   ) : (
                     <div className="w-10 h-10 rounded-full bg-indigo-200 flex items-center justify-center text-indigo-700 font-bold text-sm">
@@ -599,6 +600,7 @@ export function MessagesView({ userProfile, currentUserId, onUnreadChange, initi
                   src={otherParticipant.avatar}
                   alt=""
                   className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-slate-100 border border-slate-200"
+                  referrerPolicy="no-referrer"
                 />
                 <div className="min-w-0 flex-1">
                   <h3 className="font-semibold text-slate-900 flex items-center text-sm sm:text-base truncate">

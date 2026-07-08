@@ -113,6 +113,7 @@ export function ProfileView({
                   src={formData.avatar}
                   alt={formData.name}
                   className="w-24 h-24 sm:w-32 sm:h-32 rounded-full border-4 border-white bg-slate-100 object-cover"
+                  referrerPolicy="no-referrer"
                 />
                 {isEditing && (
                   <>

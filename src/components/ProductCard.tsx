@@ -3,8 +3,18 @@ import { Product } from '../types';
 import { formatCurrency, formatTimeAgo } from '../lib/utils';
 import { motion } from 'motion/react';
 import type { Key } from 'react';
+import { useState } from 'react';
 
 export function ProductCard({ product, onClick }: { product: Product, onClick: () => void, key?: Key }) {
+  const [imgError, setImgError] = useState(false);
+  const avatarSrc = product.seller.avatar || '';
+  const initials = (product.seller.name || '?')[0].toUpperCase();
+
+  // Cores baseadas no nome para o avatar fallback
+  const colors = ['bg-indigo-500', 'bg-violet-500', 'bg-blue-500', 'bg-emerald-500', 'bg-rose-500', 'bg-amber-500'];
+  const colorIndex = (product.seller.name?.charCodeAt(0) || 0) % colors.length;
+  const bgColor = colors[colorIndex];
+  
   return (
     <motion.div 
       whileHover={{ y: -4 }}
@@ -43,7 +53,20 @@ export function ProductCard({ product, onClick }: { product: Product, onClick: (
         
         <div className="flex items-center justify-between pt-3 border-t border-slate-100 mt-auto">
           <div className="flex items-center space-x-2">
-            <img src={product.seller.avatar} alt={product.seller.name} className="w-6 h-6 rounded-full bg-slate-200" />
+            {/* Avatar com fallback de inicial colorida */}
+            {avatarSrc && !imgError ? (
+              <img
+                src={avatarSrc}
+                alt={product.seller.name}
+                className="w-7 h-7 rounded-full bg-slate-200 object-cover flex-shrink-0"
+                referrerPolicy="no-referrer"
+                onError={() => setImgError(true)}
+              />
+            ) : (
+              <div className={`w-7 h-7 rounded-full ${bgColor} flex items-center justify-center text-white text-xs font-bold flex-shrink-0`}>
+                {initials}
+              </div>
+            )}
             <div className="flex flex-col">
               <span className="text-xs text-slate-600 font-medium">{product.seller.name}</span>
               <div className="flex items-center text-[10px] text-slate-500">

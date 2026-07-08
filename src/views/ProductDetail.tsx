@@ -74,7 +74,12 @@ export function ProductDetail({ productId, products, onBack, onMessage, onViewSe
               className="flex items-center space-x-4 cursor-pointer group"
               onClick={() => onViewSeller && onViewSeller(product.seller.id)}
             >
-              <img src={product.seller.avatar} alt="Seller" className="w-12 h-12 rounded-full bg-slate-800 border-2 border-slate-700 group-hover:border-indigo-500 transition-colors" />
+              <img 
+                src={product.seller.avatar} 
+                alt="Seller" 
+                className="w-12 h-12 rounded-full bg-slate-800 border-2 border-slate-700 group-hover:border-indigo-500 transition-colors" 
+                referrerPolicy="no-referrer"
+              />
               <div>
                 <h3 className="text-white font-medium group-hover:text-indigo-400 transition-colors">{product.seller.name}</h3>
                 <div className="flex items-center text-sm text-slate-400 mt-0.5">
