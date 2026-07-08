@@ -5,12 +5,32 @@ import { Product } from '../types';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 
+// Busca avatar do vendedor no localStorage como fallback
+function getSellerAvatarFromStorage(sellerId: string): string {
+  if (!sellerId || sellerId === 'guest') return '';
+  try {
+    const profile = localStorage.getItem(`userProfile_${sellerId}`);
+    if (profile) {
+      const parsed = JSON.parse(profile);
+      return parsed.avatar || '';
+    }
+  } catch (e) {}
+  return '';
+}
+
 export function ProductDetail({ productId, products, onBack, onMessage, onViewSeller }: { productId: string, products: Product[], onBack: () => void, onMessage: (context?: any) => void, onViewSeller?: (id: string) => void }) {
   const product = products.find(p => p.id === productId);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [avatarError, setAvatarError] = useState(false);
 
   if (!product) return <div>Product not found</div>;
+
+  // Resolve o avatar: usa o do produto, ou busca no localStorage pelo ID do vendedor
+  const sellerAvatar = product.seller.avatar || getSellerAvatarFromStorage(product.seller.id);
+  const sellerInitial = (product.seller.name || '?')[0].toUpperCase();
+  const avatarColors = ['bg-indigo-500', 'bg-violet-500', 'bg-blue-500', 'bg-emerald-500', 'bg-rose-500', 'bg-amber-500'];
+  const avatarBg = avatarColors[(product.seller.name?.charCodeAt(0) || 0) % avatarColors.length];
 
   return (
     <div className="w-full">
@@ -74,12 +94,20 @@ export function ProductDetail({ productId, products, onBack, onMessage, onViewSe
               className="flex items-center space-x-4 cursor-pointer group"
               onClick={() => onViewSeller && onViewSeller(product.seller.id)}
             >
-              <img 
-                src={product.seller.avatar} 
-                alt="Seller" 
-                className="w-12 h-12 rounded-full bg-slate-800 border-2 border-slate-700 group-hover:border-indigo-500 transition-colors" 
-                referrerPolicy="no-referrer"
-              />
+              {/* Avatar do vendedor com fallback de localStorage e inicial colorida */}
+              {sellerAvatar && !avatarError ? (
+                <img 
+                  src={sellerAvatar} 
+                  alt="Seller" 
+                  className="w-12 h-12 rounded-full bg-slate-800 border-2 border-slate-700 group-hover:border-indigo-500 transition-colors" 
+                  referrerPolicy="no-referrer"
+                  onError={() => setAvatarError(true)}
+                />
+              ) : (
+                <div className={`w-12 h-12 rounded-full ${avatarBg} border-2 border-slate-700 group-hover:border-indigo-500 flex items-center justify-center text-white text-lg font-bold transition-colors`}>
+                  {sellerInitial}
+                </div>
+              )}
               <div>
                 <h3 className="text-white font-medium group-hover:text-indigo-400 transition-colors">{product.seller.name}</h3>
                 <div className="flex items-center text-sm text-slate-400 mt-0.5">

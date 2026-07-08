@@ -237,20 +237,20 @@ export function MessagesView({ userProfile, currentUserId, onUnreadChange, initi
               if (m.id === msgId) {
                 // If this emoji is already the reaction, remove it (toggle). If not, add/replace.
                 const hasReaction = m.reactions?.some(
-                  (r) => r.userId === CURRENT_USER.id && r.emoji === emoji,
+                  (r) => r.userId === currentUserId && r.emoji === emoji,
                 );
                 let newReactions = m.reactions ? [...m.reactions] : [];
 
                 if (hasReaction) {
                   newReactions = newReactions.filter(
-                    (r) => !(r.userId === CURRENT_USER.id && r.emoji === emoji),
+                    (r) => !(r.userId === currentUserId && r.emoji === emoji),
                   );
                 } else {
                   // Remove existing from this user
                   newReactions = newReactions.filter(
-                    (r) => r.userId !== CURRENT_USER.id,
+                    (r) => r.userId !== currentUserId,
                   );
-                  newReactions.push({ emoji, userId: CURRENT_USER.id });
+                  newReactions.push({ emoji, userId: currentUserId });
                 }
 
                 return { ...m, reactions: newReactions };
@@ -644,7 +644,7 @@ export function MessagesView({ userProfile, currentUserId, onUnreadChange, initi
             }}
           >
             {chat.messages.map((msg) => {
-              const isMe = msg.senderId === CURRENT_USER.id;
+              const isMe = msg.senderId === currentUserId;
               const isSystem = msg.isSystem;
               const isSelected = selectedMessageId === msg.id;
 
@@ -695,39 +695,48 @@ export function MessagesView({ userProfile, currentUserId, onUnreadChange, initi
                     </div>
                   )}
 
-                  <div
-                    onContextMenu={(e) => {
-                      e.preventDefault();
-                      setSelectedMessageId(msg.id);
-                    }}
-                    onTouchStart={() => {
-                      longPressTimerRef.current = setTimeout(() => {
+                  <div className={`flex items-end gap-2 max-w-full ${isMe ? "flex-row-reverse" : "flex-row"}`}>
+                    {!isMe && (
+                      <img
+                        src={msg.senderAvatar}
+                        alt={msg.senderName}
+                        className="w-8 h-8 rounded-full bg-slate-200 shrink-0 object-cover border border-slate-100"
+                        referrerPolicy="no-referrer"
+                      />
+                    )}
+                    <div
+                      onContextMenu={(e) => {
+                        e.preventDefault();
                         setSelectedMessageId(msg.id);
-                      }, 400);
-                    }}
-                    onTouchEnd={() => {
-                      if (longPressTimerRef.current)
-                        clearTimeout(longPressTimerRef.current);
-                    }}
-                    onTouchMove={() => {
-                      if (longPressTimerRef.current)
-                        clearTimeout(longPressTimerRef.current);
-                    }}
-                    onMouseDown={() => {
-                      longPressTimerRef.current = setTimeout(() => {
-                        setSelectedMessageId(msg.id);
-                      }, 400);
-                    }}
-                    onMouseUp={() => {
-                      if (longPressTimerRef.current)
-                        clearTimeout(longPressTimerRef.current);
-                    }}
-                    onMouseLeave={() => {
-                      if (longPressTimerRef.current)
-                        clearTimeout(longPressTimerRef.current);
-                    }}
-                    className={`max-w-[85%] sm:max-w-[70%] px-3 sm:px-4 py-2.5 sm:py-3 rounded-2xl cursor-pointer relative flex flex-col gap-1 shadow-sm ${isMe ? "bg-indigo-600 text-white rounded-br-sm" : "bg-white text-slate-800 rounded-bl-sm border border-slate-100"} ${isSelected ? "ring-2 ring-indigo-400 opacity-90" : "hover:opacity-95"}`}
-                  >
+                      }}
+                      onTouchStart={() => {
+                        longPressTimerRef.current = setTimeout(() => {
+                          setSelectedMessageId(msg.id);
+                        }, 400);
+                      }}
+                      onTouchEnd={() => {
+                        if (longPressTimerRef.current)
+                          clearTimeout(longPressTimerRef.current);
+                      }}
+                      onTouchMove={() => {
+                        if (longPressTimerRef.current)
+                          clearTimeout(longPressTimerRef.current);
+                      }}
+                      onMouseDown={() => {
+                        longPressTimerRef.current = setTimeout(() => {
+                          setSelectedMessageId(msg.id);
+                        }, 400);
+                      }}
+                      onMouseUp={() => {
+                        if (longPressTimerRef.current)
+                          clearTimeout(longPressTimerRef.current);
+                      }}
+                      onMouseLeave={() => {
+                        if (longPressTimerRef.current)
+                          clearTimeout(longPressTimerRef.current);
+                      }}
+                      className={`max-w-[85%] sm:max-w-[70%] px-3 sm:px-4 py-2.5 sm:py-3 rounded-2xl cursor-pointer relative flex flex-col gap-1 shadow-sm ${isMe ? "bg-indigo-600 text-white rounded-br-sm" : "bg-white text-slate-800 rounded-bl-sm border border-slate-100"} ${isSelected ? "ring-2 ring-indigo-400 opacity-90" : "hover:opacity-95"}`}
+                    >
                     {msg.replyToMessageId && (
                       <div
                         className={`mb-1 p-2 rounded text-xs border-l-2 opacity-90 ${isMe ? "bg-indigo-700/50 border-white/50 text-indigo-50" : "bg-slate-50 border-indigo-400 text-slate-600"}`}
@@ -776,6 +785,7 @@ export function MessagesView({ userProfile, currentUserId, onUnreadChange, initi
                         )}
                       </div>
                     )}
+                  </div>
                   </div>
                   <span className="text-[10px] text-slate-400 mt-1.5 mx-1 flex items-center font-medium">
                     {msg.isStarred && (
