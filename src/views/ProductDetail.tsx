@@ -5,7 +5,7 @@ import { Product } from '../types';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 
-export function ProductDetail({ productId, products, onBack, onMessage, onViewSeller }: { productId: string, products: Product[], onBack: () => void, onMessage: () => void, onViewSeller?: (id: string) => void }) {
+export function ProductDetail({ productId, products, onBack, onMessage, onViewSeller }: { productId: string, products: Product[], onBack: () => void, onMessage: (context?: any) => void, onViewSeller?: (id: string) => void }) {
   const product = products.find(p => p.id === productId);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -86,7 +86,13 @@ export function ProductDetail({ productId, products, onBack, onMessage, onViewSe
                 </div>
               </div>
             </div>
-            <button onClick={onMessage} className="bg-slate-800 hover:bg-slate-700 text-white px-6 py-2.5 rounded-lg font-medium transition-colors border border-slate-700 flex items-center">
+            <button onClick={() => onMessage({
+              targetUserId: product.seller.id,
+              targetUserName: product.seller.name,
+              targetUserAvatar: product.seller.avatar,
+              productId: product.id,
+              productTitle: product.title
+            })} className="bg-slate-800 hover:bg-slate-700 text-white px-6 py-2.5 rounded-lg font-medium transition-colors border border-slate-700 flex items-center">
               <Languages className="w-4 h-4 mr-2 text-indigo-400" /> Contato (Tradução Automática)
             </button>
           </div>

@@ -23,7 +23,7 @@ import {
 import { format } from "date-fns";
 import { LOGO_URL } from "../lib/logo";
 
-export function MessagesView({ userProfile, onUnreadChange }: { userProfile?: any, onUnreadChange?: (count: number) => void }) {
+export function MessagesView({ userProfile, currentUserId, onUnreadChange, initialContext }: { userProfile?: any, currentUserId: string, onUnreadChange?: (count: number) => void, initialContext?: any }) {
   const [chats, setChats] = useState<any[]>([]);
   const wsRef = useRef<WebSocket | null>(null);
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
@@ -48,7 +48,7 @@ export function MessagesView({ userProfile, onUnreadChange }: { userProfile?: an
 
   const chat = activeChatId ? chats.find((c) => c.id === activeChatId) : null;
   const otherParticipant = chat?.participants.find(
-    (p) => p.id !== CURRENT_USER.id,
+    (p) => p.id !== currentUserId,
   );
 
   useEffect(() => {
@@ -61,7 +61,7 @@ export function MessagesView({ userProfile, onUnreadChange }: { userProfile?: an
   useEffect(() => {
     const fetchChats = async () => {
       try {
-        const res = await fetch(`/api/chats?userId=${CURRENT_USER.id}`);
+        const res = await fetch(`/api/chats?userId=${currentUserId}`);
         if (res.ok) {
           const data = await res.json();
           setChats(data);
@@ -107,7 +107,7 @@ export function MessagesView({ userProfile, onUnreadChange }: { userProfile?: an
             });
           });
           
-          if (onUnreadChange && data.message.senderId !== CURRENT_USER.id && activeChatId !== data.chatId) {
+          if (onUnreadChange && data.message.senderId !== currentUserId && activeChatId !== data.chatId) {
              onUnreadChange(1); // Incrementa
           }
         }
@@ -121,10 +121,50 @@ export function MessagesView({ userProfile, onUnreadChange }: { userProfile?: an
     };
   }, []);
 
+  // Cria ou carrega um chat quando vier do "Contato" em um produto
+  useEffect(() => {
+    if (initialContext) {
+      const startChat = async () => {
+        try {
+          const res = await fetch('/api/chats', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              userId: currentUserId,
+              currentUserName: userProfile?.name || 'Você',
+              currentUserAvatar: userProfile?.avatar || '',
+              targetUserId: initialContext.targetUserId,
+              targetUserName: initialContext.targetUserName,
+              targetUserAvatar: initialContext.targetUserAvatar,
+              productId: initialContext.productId,
+              productTitle: initialContext.productTitle,
+            })
+          });
+          if (res.ok) {
+            const data = await res.json();
+            
+            // Adiciona aos chats se não existir
+            setChats(prev => {
+              if (!prev.find(c => c.id === data.id)) {
+                return [data, ...prev];
+              }
+              return prev;
+            });
+            
+            setActiveChatId(data.id);
+          }
+        } catch (e) {
+          console.error("Erro ao iniciar chat via contexto:", e);
+        }
+      };
+      startChat();
+    }
+  }, [initialContext, currentUserId, userProfile]);
+
   // Quando ativa um chat, avisa o server e zera notificações (simplificado)
   useEffect(() => {
     if (activeChatId && wsRef.current?.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify({ type: 'join', userId: CURRENT_USER.id, chatId: activeChatId }));
+      wsRef.current.send(JSON.stringify({ type: 'join', userId: currentUserId, chatId: activeChatId }));
       if (onUnreadChange) onUnreadChange(0);
     }
   }, [activeChatId]);
@@ -142,7 +182,7 @@ export function MessagesView({ userProfile, onUnreadChange }: { userProfile?: an
 
     const newMsg = {
       id: `m${Date.now()}`,
-      senderId: CURRENT_USER.id,
+      senderId: currentUserId,
       senderName: userProfile?.name || CURRENT_USER.name,
       senderAvatar: userProfile?.avatar || CURRENT_USER.avatar,
       text: newMessage,

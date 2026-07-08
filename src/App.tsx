@@ -33,6 +33,7 @@ export default function App() {
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [selectedSellerId, setSelectedSellerId] = useState<string | null>(null);
   const [categoryFilter, setCategoryFilter] = useState('Tudo');
+  const [initialChatContext, setInitialChatContext] = useState<any>(null);
 
   const [categories, setCategories] = useState<string[]>(() => {
     const saved = localStorage.getItem('customCategories');
@@ -404,7 +405,10 @@ export default function App() {
                 productId={selectedProductId} 
                 products={products}
                 onBack={handleBackToHome}
-                onMessage={() => handleSetView('messages')}
+                onMessage={(context) => {
+                  setInitialChatContext(context);
+                  handleSetView('messages');
+                }}
                 onViewSeller={handleViewSellerProfile}
               />
             </motion.div>
@@ -419,7 +423,12 @@ export default function App() {
               transition={{ duration: 0.2 }}
               className="flex-1 min-h-0 w-full h-full"
             >
-              <MessagesView userProfile={userProfile} onUnreadChange={setUnreadMessagesCount} />
+              <MessagesView 
+                userProfile={userProfile} 
+                currentUserId={userId}
+                initialContext={initialChatContext}
+                onUnreadChange={setUnreadMessagesCount} 
+              />
             </motion.div>
           )}
 
