@@ -77,89 +77,89 @@ export function MessagesView({ userProfile, currentUserId, onUnreadChange, initi
 
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const wsUrl = `${protocol}//${window.location.host}/ws/chat`;
-    const ws = new WebSocket(wsUrl);
-    wsRef.current = ws;
+    let ws: WebSocket | null = null;
+    try {
+      ws = new WebSocket(wsUrl);
+      wsRef.current = ws;
 
-    ws.onopen = () => {
-      console.log('WS Connectado');
-    };
+      ws.onopen = () => {
+        console.log('WS Connectado');
+      };
 
-    ws.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        if (data.type === 'history') {
-          setChats(prev => prev.map(c => c.id === data.room.id ? data.room : c));
-        } else if (data.type === 'message') {
-          setChats(prev => {
-            const exists = prev.some(c => c.id === data.chatId);
-            if (!exists) {
-              // Se a sala não existe no estado, precisa buscar de novo (novo chat iniciado)
-              fetchChats();
-              return prev;
-            }
-            return prev.map(c => {
-              if (c.id === data.chatId) {
-                 // Evita duplicar se eu que mandei (o send já atualiza)
-                 if (c.messages.some((m: any) => m.id === data.message.id)) return c;
-                 return { ...c, messages: [...c.messages, data.message], lastUpdated: data.message.timestamp };
-              }
-              return c;
+      ws.onerror = () => {
+        // WebSocket não disponível (ex: Netlify static) - silencia e segue
+        console.warn('WebSocket não disponível. Modo offline.');
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.type === 'history') {
+            setChats(prev => prev.map(c => c.id === data.room.id ? data.room : c));
+          } else if (data.type === 'message') {
+            setChats(prev => {
+              const exists = prev.some(c => c.id === data.chatId);
+              if (!exists) return prev;
+              return prev.map(c => {
+                if (c.id === data.chatId) {
+                  if (c.messages.some((m: any) => m.id === data.message.id)) return c;
+                  return { ...c, messages: [...c.messages, data.message], lastUpdated: data.message.timestamp };
+                }
+                return c;
+              });
             });
-          });
-          
-          if (onUnreadChange && data.message.senderId !== currentUserId && activeChatId !== data.chatId) {
-             onUnreadChange(1); // Incrementa
+
+            if (onUnreadChange && data.message.senderId !== currentUserId && activeChatId !== data.chatId) {
+              onUnreadChange(1);
+            }
           }
+        } catch(e) {
+          console.error(e);
         }
-      } catch(e) {
-        console.error(e);
-      }
-    };
+      };
+    } catch(e) {
+      console.warn('Erro ao conectar WebSocket:', e);
+    }
 
     return () => {
-      ws.close();
+      ws?.close();
     };
   }, []);
 
   // Cria ou carrega um chat quando vier do "Contato" em um produto
   useEffect(() => {
-    if (initialContext) {
-      const startChat = async () => {
-        try {
-          const res = await fetch('/api/chats', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              userId: currentUserId,
-              currentUserName: userProfile?.name || 'Você',
-              currentUserAvatar: userProfile?.avatar || '',
-              targetUserId: initialContext.targetUserId,
-              targetUserName: initialContext.targetUserName,
-              targetUserAvatar: initialContext.targetUserAvatar,
-              productId: initialContext.productId,
-              productTitle: initialContext.productTitle,
-            })
+    if (!initialContext) return;
+    const startChat = async () => {
+      try {
+        const res = await fetch('/api/chats', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: currentUserId,
+            currentUserName: userProfile?.name || 'Você',
+            currentUserAvatar: userProfile?.avatar || '',
+            targetUserId: initialContext.targetUserId,
+            targetUserName: initialContext.targetUserName,
+            targetUserAvatar: initialContext.targetUserAvatar,
+            productId: initialContext.productId,
+            productTitle: initialContext.productTitle,
+          })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          // Atualiza chats E ativa o chat num único batch para evitar tela azul no mobile
+          setChats(prev => {
+            if (!prev.find(c => c.id === data.id)) return [data, ...prev];
+            return prev;
           });
-          if (res.ok) {
-            const data = await res.json();
-            
-            // Adiciona aos chats se não existir
-            setChats(prev => {
-              if (!prev.find(c => c.id === data.id)) {
-                return [data, ...prev];
-              }
-              return prev;
-            });
-            
-            setActiveChatId(data.id);
-          }
-        } catch (e) {
-          console.error("Erro ao iniciar chat via contexto:", e);
+          setActiveChatId(data.id);
         }
-      };
-      startChat();
-    }
-  }, [initialContext, currentUserId, userProfile]);
+      } catch (e) {
+        console.error("Erro ao iniciar chat via contexto:", e);
+      }
+    };
+    startChat();
+  }, [initialContext]);
 
   // Quando ativa um chat, avisa o server e zera notificações (simplificado)
   useEffect(() => {
@@ -379,9 +379,15 @@ export function MessagesView({ userProfile, currentUserId, onUnreadChange, initi
           <h2 className="text-lg font-bold text-slate-900">Mensagens</h2>
         </div>
         <div className="overflow-y-auto flex-1">
+          {chats.length === 0 && (
+            <div className="p-8 text-center text-slate-400 text-sm">
+              <p>Nenhuma conversa ainda.</p>
+              <p className="mt-1">Clique em "Contato" na página de um produto para iniciar.</p>
+            </div>
+          )}
           {chats.map((c) => {
             const participant = c.participants.find(
-              (p) => p.id !== CURRENT_USER.id,
+              (p) => p.id !== currentUserId,
             );
             const lastMessage = c.messages[c.messages.length - 1];
             return (
@@ -391,22 +397,30 @@ export function MessagesView({ userProfile, currentUserId, onUnreadChange, initi
                 className={`p-4 border-b border-slate-100 cursor-pointer transition-colors ${activeChatId === c.id ? "bg-indigo-50" : "hover:bg-slate-100 bg-white"}`}
               >
                 <div className="flex items-center space-x-3">
-                  <img
-                    src={participant?.avatar}
-                    alt=""
-                    className="w-10 h-10 rounded-full bg-slate-200"
-                  />
+                  {participant?.avatar ? (
+                    <img
+                      src={participant.avatar}
+                      alt=""
+                      className="w-10 h-10 rounded-full bg-slate-200 object-cover"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-indigo-200 flex items-center justify-center text-indigo-700 font-bold text-sm">
+                      {participant?.name?.[0] || '?'}
+                    </div>
+                  )}
                   <div className="flex-1 min-w-0">
                     <div className="flex justify-between items-baseline mb-1">
                       <h4 className="text-sm font-semibold text-slate-900 truncate">
-                        {participant?.name}
+                        {participant?.name || 'Usuário'}
                       </h4>
-                      <span className="text-[10px] text-slate-500">
-                        {format(new Date(lastMessage.timestamp), "HH:mm")}
-                      </span>
+                      {lastMessage && (
+                        <span className="text-[10px] text-slate-500">
+                          {format(new Date(lastMessage.timestamp), "HH:mm")}
+                        </span>
+                      )}
                     </div>
                     <p className="text-xs text-slate-500 truncate">
-                      {lastMessage.text}
+                      {lastMessage ? lastMessage.text : c.productTitle ? `Sobre: ${c.productTitle}` : 'Inicie a conversa!'}
                     </p>
                   </div>
                 </div>
@@ -855,12 +869,22 @@ export function MessagesView({ userProfile, currentUserId, onUnreadChange, initi
           </div>
         </div>
       ) : (
-        <div className="hidden md:flex flex-1 flex-col items-center justify-center bg-slate-50/50">
-          <img src={LOGO_URL} alt="ShopConnect" className="h-16 w-auto object-contain mb-6 opacity-30" />
-          <h3 className="text-xl font-medium text-slate-700">Suas Mensagens</h3>
-          <p className="text-slate-500 mt-2">
-            Selecione uma conversa para começar a negociar.
-          </p>
+        <div className="flex flex-1 flex-col items-center justify-center bg-slate-50/50">
+          {activeChatId ? (
+            // Chat foi selecionado mas ainda está carregando
+            <div className="flex flex-col items-center gap-3 text-slate-400">
+              <div className="w-8 h-8 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin" />
+              <p className="text-sm">Carregando conversa...</p>
+            </div>
+          ) : (
+            <>
+              <img src={LOGO_URL} alt="ShopConnect" className="h-16 w-auto object-contain mb-6 opacity-30" />
+              <h3 className="text-xl font-medium text-slate-700">Suas Mensagens</h3>
+              <p className="text-slate-500 mt-2 text-center px-4">
+                Selecione uma conversa ou clique em<br/>"Contato" na página de um produto.
+              </p>
+            </>
+          )}
         </div>
       )}
     </div>
