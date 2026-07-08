@@ -19,7 +19,9 @@ export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
     return localStorage.getItem('isAuthenticated') === 'true';
   });
-  const [userId, setUserId] = useState<string>('guest');
+  const [userId, setUserId] = useState<string>(() => {
+    return localStorage.getItem('userId') || 'guest';
+  });
   const [view, setView] = useState(() => {
     return localStorage.getItem('currentView') || 'home';
   });
@@ -74,7 +76,8 @@ export default function App() {
   };
 
   const [userProfile, setUserProfile] = useState(() => {
-    const saved = localStorage.getItem('userProfile_guest');
+    const activeUid = localStorage.getItem('userId') || 'guest';
+    const saved = localStorage.getItem(`userProfile_${activeUid}`);
     if (saved) return JSON.parse(saved);
     return defaultProfile;
   });
@@ -112,6 +115,7 @@ export default function App() {
       if (session) {
         setIsAuthenticated(true);
         setUserId(session.user.id);
+        localStorage.setItem('userId', session.user.id);
         loadProfileForUser(session.user.id, session.user);
       }
     });
@@ -122,6 +126,7 @@ export default function App() {
         localStorage.setItem('isAuthenticated', 'true');
         const uid = session.user.id;
         setUserId(uid);
+        localStorage.setItem('userId', uid);
         loadProfileForUser(uid, session.user);
 
         // Migra anúncios antigos com seller.id='u1' para o userId real
@@ -144,8 +149,15 @@ export default function App() {
           handleSetView('home');
         }
       } else {
+        // Se for login mock de administrador, não desloga
+        const activeUid = localStorage.getItem('userId');
+        if (activeUid === 'admin') {
+          return;
+        }
+
         setIsAuthenticated(false);
         setUserId('guest');
+        localStorage.removeItem('userId');
         const saved = localStorage.getItem('userProfile_guest');
         setUserProfile(saved ? JSON.parse(saved) : defaultProfile);
         localStorage.removeItem('isAuthenticated');
@@ -158,6 +170,46 @@ export default function App() {
   const handleLogin = () => {
     setIsAuthenticated(true);
     localStorage.setItem('isAuthenticated', 'true');
+    setUserId('admin');
+    localStorage.setItem('userId', 'admin');
+    
+    // Carrega ou inicializa perfil para o admin
+    const profileKey = 'userProfile_admin';
+    const saved = localStorage.getItem(profileKey);
+    if (saved) {
+      setUserProfile(JSON.parse(saved));
+    } else {
+      const adminProfile = {
+        name: 'Administrador',
+        avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Admin',
+        email: 'adminshopconnect@support.com',
+        location: 'São Paulo, SP - Brasil',
+        birthDate: '1990-05-15',
+        gender: 'Masculino',
+        memberSince: new Date().getFullYear().toString(),
+      };
+      setUserProfile(adminProfile);
+      localStorage.setItem(profileKey, JSON.stringify(adminProfile));
+    }
+
+    // Migra anúncios antigos ou guest para o admin
+    const savedProds = localStorage.getItem('global_products');
+    if (savedProds) {
+      try {
+        const prods = JSON.parse(savedProds);
+        const migrated = prods.map((p: any) => {
+          if (p.seller?.id === 'u1' || p.seller?.id === 'guest') {
+            return { ...p, seller: { ...p.seller, id: 'admin', name: 'Administrador' } };
+          }
+          return p;
+        });
+        localStorage.setItem('global_products', JSON.stringify(migrated));
+        setProducts(migrated);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
     handleSetView('home');
   };
 
@@ -165,6 +217,7 @@ export default function App() {
     await supabase.auth.signOut();
     setIsAuthenticated(false);
     setUserId('guest');
+    localStorage.removeItem('userId');
     // Reseta para o perfil padrão de convidado
     const saved = localStorage.getItem('userProfile_guest');
     setUserProfile(saved ? JSON.parse(saved) : defaultProfile);
