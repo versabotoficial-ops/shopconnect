@@ -696,14 +696,12 @@ export function MessagesView({ userProfile, currentUserId, onUnreadChange, initi
                   )}
 
                   <div className={`flex items-end gap-2 max-w-full ${isMe ? "flex-row-reverse" : "flex-row"}`}>
-                    {!isMe && (
-                      <img
-                        src={msg.senderAvatar}
-                        alt={msg.senderName}
-                        className="w-8 h-8 rounded-full bg-slate-200 shrink-0 object-cover border border-slate-100"
-                        referrerPolicy="no-referrer"
-                      />
-                    )}
+                    <img
+                      src={msg.senderAvatar}
+                      alt={msg.senderName}
+                      className="w-8 h-8 rounded-full bg-slate-200 shrink-0 object-cover border border-slate-100"
+                      referrerPolicy="no-referrer"
+                    />
                     <div
                       onContextMenu={(e) => {
                         e.preventDefault();
