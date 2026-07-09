@@ -401,11 +401,16 @@ export function MessagesView({ userProfile, currentUserId, onUnreadChange, initi
                     <img
                       src={participant.avatar}
                       alt=""
-                      className="w-10 h-10 rounded-full bg-slate-200 object-cover"
+                      className="w-10 h-10 rounded-full bg-slate-200 object-cover border border-slate-200"
                       referrerPolicy="no-referrer"
+                      onError={(e) => {
+                        if (!e.currentTarget.src.includes('dicebear')) {
+                          e.currentTarget.src = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(participant?.name || 'U')}&backgroundColor=e0e7ff&textColor=4338ca`;
+                        }
+                      }}
                     />
                   ) : (
-                    <div className="w-10 h-10 rounded-full bg-indigo-200 flex items-center justify-center text-indigo-700 font-bold text-sm">
+                    <div className="w-10 h-10 rounded-full bg-indigo-200 flex items-center justify-center text-indigo-700 font-bold text-sm border border-slate-200">
                       {participant?.name?.[0] || '?'}
                     </div>
                   )}
@@ -596,12 +601,23 @@ export function MessagesView({ userProfile, currentUserId, onUnreadChange, initi
                 >
                   <ArrowLeft className="w-6 h-6" />
                 </button>
-                <img
-                  src={otherParticipant.avatar}
-                  alt=""
-                  className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-slate-100 border border-slate-200"
-                  referrerPolicy="no-referrer"
-                />
+                {otherParticipant.avatar ? (
+                  <img
+                    src={otherParticipant.avatar}
+                    alt=""
+                    className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-slate-100 border border-slate-200 object-cover"
+                    referrerPolicy="no-referrer"
+                    onError={(e) => {
+                      if (!e.currentTarget.src.includes('dicebear')) {
+                        e.currentTarget.src = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(otherParticipant.name || 'U')}&backgroundColor=e0e7ff&textColor=4338ca`;
+                      }
+                    }}
+                  />
+                ) : (
+                  <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-indigo-200 flex items-center justify-center text-indigo-700 font-bold text-sm sm:text-base border border-slate-200">
+                    {otherParticipant.name?.[0] || '?'}
+                  </div>
+                )}
                 <div className="min-w-0 flex-1">
                   <h3 className="font-semibold text-slate-900 flex items-center text-sm sm:text-base truncate">
                     <span className="truncate">{otherParticipant.name}</span>
@@ -696,12 +712,23 @@ export function MessagesView({ userProfile, currentUserId, onUnreadChange, initi
                   )}
 
                   <div className={`flex items-end gap-2 max-w-full ${isMe ? "flex-row-reverse" : "flex-row"}`}>
-                    <img
-                      src={msg.senderAvatar}
-                      alt={msg.senderName}
-                      className="w-8 h-8 rounded-full bg-slate-200 shrink-0 object-cover border border-slate-100"
-                      referrerPolicy="no-referrer"
-                    />
+                    {msg.senderAvatar ? (
+                      <img
+                        src={msg.senderAvatar}
+                        alt={msg.senderName}
+                        className="w-8 h-8 rounded-full bg-slate-200 shrink-0 object-cover border border-slate-100"
+                        referrerPolicy="no-referrer"
+                        onError={(e) => {
+                          if (!e.currentTarget.src.includes('dicebear')) {
+                            e.currentTarget.src = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(msg.senderName || 'U')}&backgroundColor=e0e7ff&textColor=4338ca`;
+                          }
+                        }}
+                      />
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-indigo-200 flex items-center justify-center text-indigo-700 font-bold text-xs shrink-0 border border-slate-100">
+                        {msg.senderName?.[0] || '?'}
+                      </div>
+                    )}
                     <div
                       onContextMenu={(e) => {
                         e.preventDefault();
