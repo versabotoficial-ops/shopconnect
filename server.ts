@@ -3,6 +3,9 @@ import path from 'path';
 import { createServer as createViteServer } from 'vite';
 import { createServer as createHttpServer } from 'http';
 import { WebSocketServer, WebSocket } from 'ws';
+import fs from 'fs/promises';
+
+const DB_FILE = path.join(process.cwd(), 'db.json');
 
 // ---- Tipos internos do servidor ----
 interface ChatMessage {
@@ -27,7 +30,7 @@ interface ChatRoom {
 }
 
 // ---- Estado em memória ----
-const chatRooms = new Map<string, ChatRoom>();
+let chatRooms = new Map<string, ChatRoom>();
 const wsClients = new Map<WebSocket, { userId: string; chatId?: string }>();
 
 function broadcast(chatId: string, data: object, excludeWs?: WebSocket) {
@@ -43,7 +46,40 @@ async function startServer() {
   const app = express();
   const PORT = 3000;
 
-  app.use(express.json());
+  app.use(express.json({ limit: '50mb' }));
+
+  // ---- Estado em memória para Produtos ----
+  let globalProducts = new Map<string, any>();
+
+  // ---- Funções de Persistência ----
+  async function loadDb() {
+    try {
+      const data = await fs.readFile(DB_FILE, 'utf-8');
+      const json = JSON.parse(data);
+      if (json.products) {
+        globalProducts = new Map(json.products);
+      }
+      if (json.chats) {
+        chatRooms = new Map(json.chats);
+      }
+    } catch (e) {
+      console.log('Nenhum banco de dados local encontrado ou erro ao ler. Iniciando limpo.');
+    }
+  }
+
+  async function saveDb() {
+    try {
+      const data = {
+        products: Array.from(globalProducts.entries()),
+        chats: Array.from(chatRooms.entries())
+      };
+      await fs.writeFile(DB_FILE, JSON.stringify(data), 'utf-8');
+    } catch (e) {
+      console.error('Erro ao salvar no db.json', e);
+    }
+  }
+
+  await loadDb();
 
   // ---- REST API de Salas de Chat ----
 
@@ -88,6 +124,7 @@ async function startServer() {
     };
 
     chatRooms.set(newRoom.id, newRoom);
+    saveDb();
     res.json(newRoom);
   });
 
@@ -100,7 +137,41 @@ async function startServer() {
 
   // Outros endpoints existentes
   app.get('/api/health', (_req, res) => {
-    res.json({ status: 'ok', service: 'ShopConnect API', chats: chatRooms.size });
+    res.json({ status: 'ok', service: 'ShopConnect API', chats: chatRooms.size, products: globalProducts.size });
+  });
+
+  // ---- REST API de Produtos ----
+  
+  // Listar todos os produtos
+  app.get('/api/products', (_req, res) => {
+    res.json(Array.from(globalProducts.values()));
+  });
+
+  // Criar um produto
+  app.post('/api/products', (req, res) => {
+    const product = req.body;
+    if (!product || !product.id) return res.status(400).json({ error: 'Produto inválido' });
+    globalProducts.set(product.id, product);
+    saveDb();
+    res.json(product);
+  });
+
+  // Atualizar um produto
+  app.put('/api/products/:id', (req, res) => {
+    const { id } = req.params;
+    const product = req.body;
+    if (!globalProducts.has(id)) return res.status(404).json({ error: 'Produto não encontrado' });
+    globalProducts.set(id, product);
+    saveDb();
+    res.json(product);
+  });
+
+  // Deletar um produto
+  app.delete('/api/products/:id', (req, res) => {
+    const { id } = req.params;
+    globalProducts.delete(id);
+    saveDb();
+    res.json({ success: true });
   });
 
   app.post('/api/payments/checkout', (_req, res) => {
@@ -170,6 +241,7 @@ async function startServer() {
 
           room.messages.push(newMsg);
           room.lastUpdated = newMsg.timestamp;
+          saveDb();
 
           // Broadcast para todos na sala, incluindo o remetente
           const payload = JSON.stringify({ type: 'message', chatId, message: newMsg });

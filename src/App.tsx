@@ -41,11 +41,34 @@ export default function App() {
     return ['Tudo', 'Computadores', 'Video Games', 'Jogos', 'Acessórios'];
   });
 
-  const [products, setProducts] = useState(() => {
+  const [products, setProducts] = useState<any[]>(() => {
     const saved = localStorage.getItem('global_products');
     if (saved) return JSON.parse(saved);
     return MOCK_PRODUCTS;
   });
+
+  // Busca inicial da API para atualizar anúncios globais
+  useEffect(() => {
+    fetch('/api/products')
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.length > 0) {
+          // Ordenar por data mais recente se houver campo createdAt, ou assumir ordem atual
+          setProducts(data.reverse()); // se a api retornar na ordem de inserção (mais velhos primeiro)
+          localStorage.setItem('global_products', JSON.stringify(data.reverse()));
+        } else {
+          // Se o backend estiver vazio, envie os mocks iniciais para popular
+          MOCK_PRODUCTS.forEach(p => {
+            fetch('/api/products', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(p)
+            }).catch(() => {});
+          });
+        }
+      })
+      .catch(err => console.error('API local não detectada. Rodando apenas com LocalStorage', err));
+  }, []);
 
   const handleAddProduct = (newProduct: any) => {
     // Usa localStorage como fonte de verdade do userId (síncrono, não afetado pelo closure React)
@@ -79,6 +102,12 @@ export default function App() {
     const updated = [productWithCorrectOwner, ...products];
     setProducts(updated);
     localStorage.setItem('global_products', JSON.stringify(updated));
+    // Salvar no backend para todos verem
+    fetch('/api/products', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(productWithCorrectOwner)
+    }).catch(() => {});
     // Não redireciona - mantém no dashboard para o usuário ver o anúncio publicado
   };
 
@@ -86,12 +115,18 @@ export default function App() {
     const updated = products.filter((p: any) => p.id !== id);
     setProducts(updated);
     localStorage.setItem('global_products', JSON.stringify(updated));
+    fetch(`/api/products/${id}`, { method: 'DELETE' }).catch(() => {});
   };
 
   const handleEditProduct = (updatedProduct: any) => {
     const updated = products.map((p: any) => p.id === updatedProduct.id ? updatedProduct : p);
     setProducts(updated);
     localStorage.setItem('global_products', JSON.stringify(updated));
+    fetch(`/api/products/${updatedProduct.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updatedProduct)
+    }).catch(() => {});
   };
 
   const defaultProfile = {
@@ -133,6 +168,17 @@ export default function App() {
     });
     setProducts(updatedProducts);
     localStorage.setItem('global_products', JSON.stringify(updatedProducts));
+    
+    // Atualizar no backend os produtos modificados
+    updatedProducts.forEach((p: any) => {
+      if (p.seller?.id === activeUserId || p.seller?.id === 'guest' || p.seller?.id === 'u1') {
+        fetch(`/api/products/${p.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(p)
+        }).catch(() => {});
+      }
+    });
   };
 
   // Carrega perfil salvo de um usuário específico
