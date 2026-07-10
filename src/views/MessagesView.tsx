@@ -212,6 +212,41 @@ export function MessagesView({ userProfile, currentUserId, onUnreadChange, initi
     setReplyToMessageId(null);
   };
 
+  const sendQuickReply = (text: string) => {
+    if (!activeChatId) return;
+
+    const newMsg = {
+      id: `m${Date.now()}`,
+      senderId: currentUserId,
+      senderName: userProfile?.name || CURRENT_USER.name,
+      senderAvatar: userProfile?.avatar || CURRENT_USER.avatar,
+      text: text,
+      language: "pt",
+      timestamp: new Date().toISOString(),
+      replyToMessageId: replyToMessageId || undefined,
+    };
+
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({ type: 'message', chatId: activeChatId, message: newMsg }));
+    }
+
+    setChats((prevChats) =>
+      prevChats.map((c) => {
+        if (c.id === activeChatId) {
+          return {
+            ...c,
+            messages: [...c.messages, newMsg],
+            lastUpdated: newMsg.timestamp,
+          };
+        }
+        return c;
+      }),
+    );
+
+    setReplyToMessageId(null);
+  };
+
+
   const handleKeyPress = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       handleSendMessage();
@@ -825,7 +860,30 @@ export function MessagesView({ userProfile, currentUserId, onUnreadChange, initi
           </div>
 
           {/* Input Area */}
-          <div className="p-3 sm:p-4 bg-white border-t border-slate-200 relative">
+          <div className="bg-white border-t border-slate-200 relative flex flex-col">
+            {/* Respostas Rápidas */}
+            <div className="flex items-center gap-2 overflow-x-auto px-3 sm:px-4 py-2 bg-slate-50 border-b border-slate-100 scrollbar-hide">
+              {[
+                "✅ Aceita oferta?",
+                "📦 Está disponível?",
+                "💰 Qual o valor?",
+                "📍 Onde retirar?",
+                "⏰ Ainda tem?",
+                "📞 Me chama no WhatsApp",
+                "🙏 Obrigado!",
+                "👋 Até mais"
+              ].map((reply, i) => (
+                <button
+                  key={i}
+                  onClick={() => sendQuickReply(reply)}
+                  className="whitespace-nowrap px-3 py-1.5 bg-white hover:bg-indigo-50 text-slate-600 hover:text-indigo-600 text-xs sm:text-sm font-medium rounded-full transition-colors border border-slate-200 shadow-sm"
+                >
+                  {reply}
+                </button>
+              ))}
+            </div>
+
+            <div className="p-3 sm:p-4 relative">
             {replyToMessageId && (
               <div className="mb-2 bg-slate-50 rounded-lg p-2 sm:p-3 border-l-4 border-indigo-500 flex items-center justify-between animate-in fade-in duration-200">
                 <div className="flex-1 min-w-0 pr-4">
@@ -903,6 +961,7 @@ export function MessagesView({ userProfile, currentUserId, onUnreadChange, initi
                 </button>
               </div>
             </div>
+          </div>
           </div>
         </div>
       ) : (
